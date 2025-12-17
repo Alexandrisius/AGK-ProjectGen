@@ -1,0 +1,14 @@
+{
+  "version": 2,
+  "dgSpecHash": "L8b6CYs9tZk=",
+  "success": true,
+  "projectFilePath": "C:\\Users\\klim9\\Yandex.Disk\\02_Work\\#Projects\\02_dotNet\\01-Рабочая\\AGK-ProjectGen\\AGK.ProjectGen.Infrastructure\\AGK.ProjectGen.Infrastructure.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\klim9\\.nuget\\packages\\microsoft.extensions.dependencyinjection.abstractions\\10.0.1\\microsoft.extensions.dependencyinjection.abstractions.10.0.1.nupkg.sha512",
+    "C:\\Users\\klim9\\.nuget\\packages\\microsoft.netcore.platforms\\5.0.0\\microsoft.netcore.platforms.5.0.0.nupkg.sha512",
+    "C:\\Users\\klim9\\.nuget\\packages\\system.io.filesystem.accesscontrol\\5.0.0\\system.io.filesystem.accesscontrol.5.0.0.nupkg.sha512",
+    "C:\\Users\\klim9\\.nuget\\packages\\system.security.accesscontrol\\5.0.0\\system.security.accesscontrol.5.0.0.nupkg.sha512",
+    "C:\\Users\\klim9\\.nuget\\packages\\system.security.principal.windows\\5.0.0\\system.security.principal.windows.5.0.0.nupkg.sha512"
+  ],
+  "logs": []
+}

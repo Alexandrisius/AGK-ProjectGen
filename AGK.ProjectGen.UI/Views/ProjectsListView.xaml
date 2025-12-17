@@ -1,0 +1,156 @@
+<UserControl x:Class="AGK.ProjectGen.UI.Views.ProjectsListView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             mc:Ignorable="d" 
+             d:DesignHeight="500" d:DesignWidth="800">
+    
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- ================================ -->
+        <!--           📋 HEADER              -->
+        <!-- ================================ -->
+        <Border Grid.Row="0" Style="{StaticResource CardStyle}" Margin="0,0,0,16">
+            <DockPanel>
+                <!-- Title -->
+                <StackPanel DockPanel.Dock="Left" Orientation="Horizontal">
+                    <TextBlock Text="📋" FontSize="24" Margin="0,0,12,0" VerticalAlignment="Center"/>
+                    <StackPanel VerticalAlignment="Center">
+                        <TextBlock Text="Мои проекты" Style="{StaticResource H2Style}"/>
+                        <TextBlock Text="Управление созданными проектами" 
+                                   Style="{StaticResource LabelStyle}" Margin="0,2,0,0"/>
+                    </StackPanel>
+                </StackPanel>
+                
+                <!-- Actions -->
+                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+                    <Button Content="🔄  Обновить" 
+                            Style="{StaticResource SecondaryButtonStyle}"
+                            Command="{Binding LoadProjectsCommand}" 
+                            Margin="0,0,8,0"/>
+                    <Button Content="➕  Новый проект" 
+                            Style="{StaticResource PrimaryButtonStyle}"
+                            Command="{Binding CreateNewProjectCommand}"/>
+                </StackPanel>
+            </DockPanel>
+        </Border>
+
+        <!-- ================================ -->
+        <!--          📁 PROJECTS LIST        -->
+        <!-- ================================ -->
+        <Border Grid.Row="1" Style="{StaticResource CardStyle}">
+            <DockPanel>
+                <!-- Empty State -->
+                <StackPanel Visibility="{Binding Projects.Count, Converter={StaticResource InverseNullToVisibilityConverter}}"
+                            HorizontalAlignment="Center" 
+                            VerticalAlignment="Center">
+                    <TextBlock Text="📂" FontSize="64" HorizontalAlignment="Center" Opacity="0.3"/>
+                    <TextBlock Text="Нет созданных проектов" 
+                               Style="{StaticResource H3Style}" 
+                               Foreground="{StaticResource TextSecondaryBrush}"
+                               HorizontalAlignment="Center" Margin="0,16,0,8"/>
+                    <TextBlock Text="Создайте первый проект, чтобы начать работу" 
+                               Style="{StaticResource LabelStyle}"
+                               HorizontalAlignment="Center"/>
+                </StackPanel>
+                
+                <!-- Projects DataGrid -->
+                <DataGrid ItemsSource="{Binding Projects}" 
+                          SelectedItem="{Binding SelectedProject}" 
+                          AutoGenerateColumns="False" 
+                          IsReadOnly="True"
+                          Background="Transparent"
+                          BorderThickness="0"
+                          GridLinesVisibility="Horizontal"
+                          HorizontalGridLinesBrush="{StaticResource BorderBrush}"
+                          RowHeight="48"
+                          HeadersVisibility="Column">
+                    
+                    <!-- Двойной клик для открытия проекта -->
+                    <DataGrid.InputBindings>
+                        <MouseBinding MouseAction="LeftDoubleClick" 
+                                      Command="{Binding OpenProjectCommand}"/>
+                    </DataGrid.InputBindings>
+                    
+                    <DataGrid.ColumnHeaderStyle>
+                        <Style TargetType="DataGridColumnHeader">
+                            <Setter Property="Background" Value="{StaticResource BgSecondaryBrush}"/>
+                            <Setter Property="Foreground" Value="{StaticResource TextSecondaryBrush}"/>
+                            <Setter Property="FontWeight" Value="SemiBold"/>
+                            <Setter Property="FontSize" Value="12"/>
+                            <Setter Property="Padding" Value="12,10"/>
+                            <Setter Property="BorderThickness" Value="0"/>
+                        </Style>
+                    </DataGrid.ColumnHeaderStyle>
+                    
+                    <DataGrid.CellStyle>
+                        <Style TargetType="DataGridCell">
+                            <Setter Property="BorderThickness" Value="0"/>
+                            <Setter Property="Padding" Value="12,0"/>
+                            <Setter Property="VerticalAlignment" Value="Center"/>
+                            <Style.Triggers>
+                                <Trigger Property="IsSelected" Value="True">
+                                    <Setter Property="Background" Value="{StaticResource BgTertiaryBrush}"/>
+                                    <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}"/>
+                                </Trigger>
+                            </Style.Triggers>
+                        </Style>
+                    </DataGrid.CellStyle>
+                    
+                    <DataGrid.RowStyle>
+                        <Style TargetType="DataGridRow">
+                            <Setter Property="Background" Value="Transparent"/>
+                            <Style.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter Property="Background" Value="{StaticResource BgSecondaryBrush}"/>
+                                </Trigger>
+                                <Trigger Property="IsSelected" Value="True">
+                                    <Setter Property="Background" Value="{StaticResource BgTertiaryBrush}"/>
+                                </Trigger>
+                            </Style.Triggers>
+                        </Style>
+                    </DataGrid.RowStyle>
+                    
+                    <DataGrid.Columns>
+                        <DataGridTemplateColumn Header="НАЗВАНИЕ" Width="*">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <StackPanel Orientation="Horizontal" Margin="12,0">
+                                        <TextBlock Text="📁" FontSize="16" Margin="0,0,10,0" VerticalAlignment="Center"/>
+                                        <TextBlock Text="{Binding Name}" 
+                                                   VerticalAlignment="Center" 
+                                                   FontWeight="Medium"
+                                                   FontSize="14"/>
+                                    </StackPanel>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                        
+                        <DataGridTextColumn Header="ПУТЬ" 
+                                            Binding="{Binding RootPath}" 
+                                            Width="2*"
+                                            Foreground="{StaticResource TextSecondaryBrush}"/>
+                        
+                        <DataGridTextColumn Header="ИЗМЕНЁН" 
+                                            Binding="{Binding State.LastGenerated, StringFormat='{}{0:dd.MM.yyyy HH:mm}'}" 
+                                            Width="Auto"/>
+                    </DataGrid.Columns>
+                    
+                    <DataGrid.ContextMenu>
+                        <ContextMenu>
+                            <MenuItem Header="✏️ Редактировать" Command="{Binding OpenProjectCommand}"/>
+                            <MenuItem Header="📂 Открыть папку" Command="{Binding OpenProjectFolderCommand}"/>
+                            <Separator/>
+                            <MenuItem Header="🗑️ Удалить" Command="{Binding DeleteProjectCommand}"/>
+                        </ContextMenu>
+                    </DataGrid.ContextMenu>
+                </DataGrid>
+            </DockPanel>
+        </Border>
+    </Grid>
+</UserControl>

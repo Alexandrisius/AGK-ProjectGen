@@ -1,0 +1,15 @@
+C:\Users\klim9\Yandex.Disk\02_Work\#Projects\02_dotNet\01-Рабочая\AGK-ProjectGen\AGK.ProjectGen.Application\bin\Debug\net8.0\AGK.ProjectGen.Application.deps.json
+C:\Users\klim9\Yandex.Disk\02_Work\#Projects\02_dotNet\01-Рабочая\AGK-ProjectGen\AGK.ProjectGen.Application\bin\Debug\net8.0\AGK.ProjectGen.Application.dll
+C:\Users\klim9\Yandex.Disk\02_Work\#Projects\02_dotNet\01-Рабочая\AGK-ProjectGen\AGK.ProjectGen.Application\bin\Debug\net8.0\AGK.ProjectGen.Application.pdb
+C:\Users\klim9\Yandex.Disk\02_Work\#Projects\02_dotNet\01-Рабочая\AGK-ProjectGen\AGK.ProjectGen.Application\bin\Debug\net8.0\AGK.ProjectGen.Domain.dll
+C:\Users\klim9\Yandex.Disk\02_Work\#Projects\02_dotNet\01-Рабочая\AGK-ProjectGen\AGK.ProjectGen.Application\bin\Debug\net8.0\AGK.ProjectGen.Domain.pdb
+C:\Users\klim9\Yandex.Disk\02_Work\#Projects\02_dotNet\01-Рабочая\AGK-ProjectGen\AGK.ProjectGen.Application\obj\Debug\net8.0\AGK.ProjectGen.Application.csproj.AssemblyReference.cache
+C:\Users\klim9\Yandex.Disk\02_Work\#Projects\02_dotNet\01-Рабочая\AGK-ProjectGen\AGK.ProjectGen.Application\obj\Debug\net8.0\AGK.ProjectGen.Application.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\klim9\Yandex.Disk\02_Work\#Projects\02_dotNet\01-Рабочая\AGK-ProjectGen\AGK.ProjectGen.Application\obj\Debug\net8.0\AGK.ProjectGen.Application.AssemblyInfoInputs.cache
+C:\Users\klim9\Yandex.Disk\02_Work\#Projects\02_dotNet\01-Рабочая\AGK-ProjectGen\AGK.ProjectGen.Application\obj\Debug\net8.0\AGK.ProjectGen.Application.AssemblyInfo.cs
+C:\Users\klim9\Yandex.Disk\02_Work\#Projects\02_dotNet\01-Рабочая\AGK-ProjectGen\AGK.ProjectGen.Application\obj\Debug\net8.0\AGK.ProjectGen.Application.csproj.CoreCompileInputs.cache
+C:\Users\klim9\Yandex.Disk\02_Work\#Projects\02_dotNet\01-Рабочая\AGK-ProjectGen\AGK.ProjectGen.Application\obj\Debug\net8.0\AGK.Proj.BB196A8C.Up2Date
+C:\Users\klim9\Yandex.Disk\02_Work\#Projects\02_dotNet\01-Рабочая\AGK-ProjectGen\AGK.ProjectGen.Application\obj\Debug\net8.0\AGK.ProjectGen.Application.dll
+C:\Users\klim9\Yandex.Disk\02_Work\#Projects\02_dotNet\01-Рабочая\AGK-ProjectGen\AGK.ProjectGen.Application\obj\Debug\net8.0\refint\AGK.ProjectGen.Application.dll
+C:\Users\klim9\Yandex.Disk\02_Work\#Projects\02_dotNet\01-Рабочая\AGK-ProjectGen\AGK.ProjectGen.Application\obj\Debug\net8.0\AGK.ProjectGen.Application.pdb
+C:\Users\klim9\Yandex.Disk\02_Work\#Projects\02_dotNet\01-Рабочая\AGK-ProjectGen\AGK.ProjectGen.Application\obj\Debug\net8.0\ref\AGK.ProjectGen.Application.dll

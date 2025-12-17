@@ -1,0 +1,17 @@
+C:\Users\klim9\Yandex.Disk\02_Work\#Projects\02_dotNet\01-Рабочая\AGK-ProjectGen\AGK.ProjectGen.Infrastructure\bin\Debug\net8.0\AGK.ProjectGen.Infrastructure.deps.json
+C:\Users\klim9\Yandex.Disk\02_Work\#Projects\02_dotNet\01-Рабочая\AGK-ProjectGen\AGK.ProjectGen.Infrastructure\bin\Debug\net8.0\AGK.ProjectGen.Infrastructure.dll
+C:\Users\klim9\Yandex.Disk\02_Work\#Projects\02_dotNet\01-Рабочая\AGK-ProjectGen\AGK.ProjectGen.Infrastructure\bin\Debug\net8.0\AGK.ProjectGen.Infrastructure.pdb
+C:\Users\klim9\Yandex.Disk\02_Work\#Projects\02_dotNet\01-Рабочая\AGK-ProjectGen\AGK.ProjectGen.Infrastructure\bin\Debug\net8.0\AGK.ProjectGen.Application.dll
+C:\Users\klim9\Yandex.Disk\02_Work\#Projects\02_dotNet\01-Рабочая\AGK-ProjectGen\AGK.ProjectGen.Infrastructure\bin\Debug\net8.0\AGK.ProjectGen.Domain.dll
+C:\Users\klim9\Yandex.Disk\02_Work\#Projects\02_dotNet\01-Рабочая\AGK-ProjectGen\AGK.ProjectGen.Infrastructure\bin\Debug\net8.0\AGK.ProjectGen.Domain.pdb
+C:\Users\klim9\Yandex.Disk\02_Work\#Projects\02_dotNet\01-Рабочая\AGK-ProjectGen\AGK.ProjectGen.Infrastructure\bin\Debug\net8.0\AGK.ProjectGen.Application.pdb
+C:\Users\klim9\Yandex.Disk\02_Work\#Projects\02_dotNet\01-Рабочая\AGK-ProjectGen\AGK.ProjectGen.Infrastructure\obj\Debug\net8.0\AGK.ProjectGen.Infrastructure.csproj.AssemblyReference.cache
+C:\Users\klim9\Yandex.Disk\02_Work\#Projects\02_dotNet\01-Рабочая\AGK-ProjectGen\AGK.ProjectGen.Infrastructure\obj\Debug\net8.0\AGK.ProjectGen.Infrastructure.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\klim9\Yandex.Disk\02_Work\#Projects\02_dotNet\01-Рабочая\AGK-ProjectGen\AGK.ProjectGen.Infrastructure\obj\Debug\net8.0\AGK.ProjectGen.Infrastructure.AssemblyInfoInputs.cache
+C:\Users\klim9\Yandex.Disk\02_Work\#Projects\02_dotNet\01-Рабочая\AGK-ProjectGen\AGK.ProjectGen.Infrastructure\obj\Debug\net8.0\AGK.ProjectGen.Infrastructure.AssemblyInfo.cs
+C:\Users\klim9\Yandex.Disk\02_Work\#Projects\02_dotNet\01-Рабочая\AGK-ProjectGen\AGK.ProjectGen.Infrastructure\obj\Debug\net8.0\AGK.ProjectGen.Infrastructure.csproj.CoreCompileInputs.cache
+C:\Users\klim9\Yandex.Disk\02_Work\#Projects\02_dotNet\01-Рабочая\AGK-ProjectGen\AGK.ProjectGen.Infrastructure\obj\Debug\net8.0\AGK.Proj.D57A217A.Up2Date
+C:\Users\klim9\Yandex.Disk\02_Work\#Projects\02_dotNet\01-Рабочая\AGK-ProjectGen\AGK.ProjectGen.Infrastructure\obj\Debug\net8.0\AGK.ProjectGen.Infrastructure.dll
+C:\Users\klim9\Yandex.Disk\02_Work\#Projects\02_dotNet\01-Рабочая\AGK-ProjectGen\AGK.ProjectGen.Infrastructure\obj\Debug\net8.0\refint\AGK.ProjectGen.Infrastructure.dll
+C:\Users\klim9\Yandex.Disk\02_Work\#Projects\02_dotNet\01-Рабочая\AGK-ProjectGen\AGK.ProjectGen.Infrastructure\obj\Debug\net8.0\AGK.ProjectGen.Infrastructure.pdb
+C:\Users\klim9\Yandex.Disk\02_Work\#Projects\02_dotNet\01-Рабочая\AGK-ProjectGen\AGK.ProjectGen.Infrastructure\obj\Debug\net8.0\ref\AGK.ProjectGen.Infrastructure.dll

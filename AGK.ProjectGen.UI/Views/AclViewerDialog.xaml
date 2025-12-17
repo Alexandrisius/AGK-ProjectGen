@@ -1,0 +1,41 @@
+<Window x:Class="AGK.ProjectGen.UI.Views.AclViewerDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Права доступа (ACL)" Height="400" Width="500"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="CanResizeWithGrip">
+    <Grid Margin="15">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Path Header -->
+        <StackPanel Grid.Row="0" Margin="0,0,0,10">
+            <TextBlock Text="Путь:" FontWeight="SemiBold"/>
+            <TextBox Text="{Binding Path, Mode=OneWay}" IsReadOnly="True" 
+                     Background="#F0F0F0" Padding="5" Margin="0,5,0,0"/>
+        </StackPanel>
+
+        <!-- ACL Rules List -->
+        <Border Grid.Row="1" BorderBrush="LightGray" BorderThickness="1">
+            <DataGrid ItemsSource="{Binding AclRules}" AutoGenerateColumns="False"
+                      CanUserAddRows="False" CanUserDeleteRows="False"
+                      IsReadOnly="True" HeadersVisibility="Column"
+                      GridLinesVisibility="Horizontal">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="Пользователь/Группа" Binding="{Binding Identity}" Width="*"/>
+                    <DataGridTextColumn Header="Права" Binding="{Binding Rights}" Width="120"/>
+                    <DataGridCheckBoxColumn Header="Запрет" Binding="{Binding IsDeny}" Width="60"/>
+                </DataGrid.Columns>
+            </DataGrid>
+        </Border>
+
+        <!-- Buttons -->
+        <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,15,0,0">
+            <Button Content="Обновить" Command="{Binding RefreshCommand}" Padding="15,8" Margin="0,0,10,0"/>
+            <Button Content="Закрыть" Click="CloseButton_Click" Padding="15,8"/>
+        </StackPanel>
+    </Grid>
+</Window>

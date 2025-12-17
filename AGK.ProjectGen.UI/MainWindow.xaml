@@ -1,0 +1,103 @@
+﻿<Window x:Class="AGK.ProjectGen.UI.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:AGK.ProjectGen.UI"
+        xmlns:vm="clr-namespace:AGK.ProjectGen.UI.ViewModels"
+        xmlns:views="clr-namespace:AGK.ProjectGen.UI.Views"
+        xmlns:system="clr-namespace:System;assembly=mscorlib"
+        mc:Ignorable="d"
+        Title="AGK ProjectGen — Генератор структуры проектов" 
+        Height="700" Width="1100"
+        WindowStartupLocation="CenterScreen"
+        Background="{StaticResource BgSecondaryBrush}">
+    
+    <Window.Resources>
+        <DataTemplate DataType="{x:Type vm:ProfileViewModel}">
+            <views:ProfileView/>
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:ProjectViewModel}">
+            <views:ProjectView/>
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:ProjectsListViewModel}">
+            <views:ProjectsListView/>
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type system:String}">
+            <TextBlock Text="{Binding}" Style="{StaticResource H2Style}" 
+                       HorizontalAlignment="Center" VerticalAlignment="Center"/>
+        </DataTemplate>
+    </Window.Resources>
+    
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="260"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+        
+        <!-- ================================ -->
+        <!--          🎨 SIDEBAR              -->
+        <!-- ================================ -->
+        <Border Grid.Column="0" Background="{StaticResource SidebarBrush}">
+            <DockPanel>
+                <!-- Logo Section -->
+                <Border DockPanel.Dock="Top" Padding="20,24,20,20">
+                    <StackPanel>
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="📐" FontSize="28" Margin="0,0,10,0" VerticalAlignment="Center"/>
+                            <StackPanel>
+                                <TextBlock Text="ProjectGen" 
+                                           FontSize="22" FontWeight="Bold" 
+                                           Foreground="{StaticResource TextOnDarkBrush}"/>
+                                <TextBlock Text="by AGK Group" 
+                                           FontSize="11" 
+                                           Foreground="{StaticResource TextLightBrush}"
+                                           Margin="0,-2,0,0"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+                
+                <!-- Navigation -->
+                <StackPanel DockPanel.Dock="Top" Margin="12,20,12,0">
+                    <TextBlock Text="НАВИГАЦИЯ" 
+                               FontSize="11" FontWeight="SemiBold" 
+                               Foreground="#94A3B8"
+                               Margin="8,0,0,12"/>
+                    
+                    <Button Style="{StaticResource SidebarButtonStyle}" 
+                            Command="{Binding NavigateToProjectsCommand}">
+                        <TextBlock Text="📁  Проекты" Foreground="White" FontSize="14"/>
+                    </Button>
+                    
+                    <Button Style="{StaticResource SidebarButtonStyle}" 
+                            Command="{Binding NavigateToProfilesCommand}"
+                            Margin="0,4,0,0">
+                        <TextBlock Text="⚙️  Профили" Foreground="White" FontSize="14"/>
+                    </Button>
+                </StackPanel>
+                
+                <!-- Bottom Section -->
+                <Border DockPanel.Dock="Bottom" Padding="20" VerticalAlignment="Bottom">
+                    <StackPanel>
+                        <Border Height="1" Background="{StaticResource SidebarLightBrush}" Margin="0,0,0,16"/>
+                        <TextBlock Text="Версия 1.0.0" 
+                                   FontSize="12" 
+                                   Foreground="{StaticResource TextLightBrush}"
+                                   HorizontalAlignment="Center"/>
+                    </StackPanel>
+                </Border>
+                
+                <!-- Spacer -->
+                <Border/>
+            </DockPanel>
+        </Border>
+        
+        <!-- ================================ -->
+        <!--        📄 CONTENT AREA           -->
+        <!-- ================================ -->
+        <Border Grid.Column="1" Padding="24">
+            <ContentControl Content="{Binding CurrentView}"/>
+        </Border>
+    </Grid>
+</Window>

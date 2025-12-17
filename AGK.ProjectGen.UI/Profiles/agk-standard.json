@@ -1,0 +1,207 @@
+{
+  "Id": "agk-standard",
+  "Name": "АГК Стандартный",
+  "Version": "1.0",
+  "Description": "Стандартный профиль для промышленных объектов AGK Group",
+  
+  "ProjectAttributes": [
+    {
+      "Key": "Code",
+      "DisplayName": "Шифр проекта",
+      "FieldType": "String",
+      "IsRequired": true,
+      "Placeholder": "Например: 2024-001",
+      "DefaultValue": ""
+    },
+    {
+      "Key": "Name",
+      "DisplayName": "Наименование проекта",
+      "FieldType": "String",
+      "IsRequired": true,
+      "Placeholder": "Полное название",
+      "DefaultValue": ""
+    },
+    {
+      "Key": "ShortName",
+      "DisplayName": "Краткое название",
+      "FieldType": "String",
+      "IsRequired": false,
+      "Placeholder": "Краткое имя",
+      "DefaultValue": ""
+    },
+    {
+      "Key": "Client",
+      "DisplayName": "Заказчик",
+      "FieldType": "String",
+      "IsRequired": false,
+      "Placeholder": "",
+      "DefaultValue": ""
+    }
+  ],
+  
+  "Dictionaries": [
+    {
+      "Key": "Stages",
+      "DisplayName": "Стадии проектирования",
+      "Items": [
+        { "Code": "П", "Name": "Стадия П (Проектная документация)" },
+        { "Code": "Р", "Name": "Стадия Р (Рабочая документация)" },
+        { "Code": "РД", "Name": "Стадия РД (Рабочая документация)" },
+        { "Code": "A", "Name": "Стадия А (Архитектурная концепция)" },
+        { "Code": "C", "Name": "Стадия C (Согласование)" }
+      ]
+    },
+    {
+      "Key": "Queues",
+      "DisplayName": "Очереди строительства",
+      "Items": [
+        { "Code": "1", "Name": "1-я очередь" },
+        { "Code": "2", "Name": "2-я очередь" },
+        { "Code": "3", "Name": "3-я очередь" }
+      ]
+    },
+    {
+      "Key": "Disciplines",
+      "DisplayName": "Разделы документации",
+      "Items": [
+        { "Code": "АР", "Name": "Архитектурные решения" },
+        { "Code": "КР", "Name": "Конструктивные решения" },
+        { "Code": "ОВ", "Name": "Отопление и вентиляция" },
+        { "Code": "ВК", "Name": "Водоснабжение и канализация" },
+        { "Code": "ЭО", "Name": "Электрооборудование" },
+        { "Code": "ТХ", "Name": "Технологические решения" },
+        { "Code": "ГП", "Name": "Генеральный план" },
+        { "Code": "ПОС", "Name": "Проект организации строительства" },
+        { "Code": "ПБ", "Name": "Пожарная безопасность" }
+      ]
+    },
+    {
+      "Key": "SystemFolders",
+      "DisplayName": "Служебные папки",
+      "Items": [
+        { "Code": "Work", "Name": "Рабочие материалы" },
+        { "Code": "Publish", "Name": "Выпуск" },
+        { "Code": "Archive", "Name": "Архив" }
+      ]
+    }
+  ],
+  
+  "NodeTypes": [
+    {
+      "TypeId": "ProjectRoot",
+      "DisplayName": "Корень проекта",
+      "DefaultFormula": "{Project.Code}_{Project.ShortName}"
+    },
+    {
+      "TypeId": "StageFolder",
+      "DisplayName": "Папка стадии",
+      "DefaultFormula": "{Stage.Code}_{Stage.Name}"
+    },
+    {
+      "TypeId": "QueueFolder",
+      "DisplayName": "Папка очереди",
+      "DefaultFormula": "{Queue.Code}_Очередь"
+    },
+    {
+      "TypeId": "DisciplineFolder",
+      "DisplayName": "Папка раздела",
+      "DefaultFormula": "{Discipline.Code}"
+    },
+    {
+      "TypeId": "SystemFolder",
+      "DisplayName": "Служебная папка",
+      "DefaultFormula": "{SystemFolder.Name}"
+    }
+  ],
+  
+  "Structure": {
+    "RootNodes": [
+      {
+        "NodeTypeId": "StageFolder",
+        "Multiplicity": "Dictionary",
+        "SourceKey": "Stages",
+        "Children": [
+          {
+            "NodeTypeId": "QueueFolder",
+            "Multiplicity": "Dictionary",
+            "SourceKey": "Queues",
+            "Children": [
+              {
+                "NodeTypeId": "DisciplineFolder",
+                "Multiplicity": "Dictionary",
+                "SourceKey": "Disciplines",
+                "Children": [
+                  {
+                    "NodeTypeId": "SystemFolder",
+                    "Multiplicity": "Dictionary",
+                    "SourceKey": "SystemFolders"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  
+  "AclTemplates": [
+    {
+      "Id": "read-only",
+      "Name": "Только чтение",
+      "Rules": [
+        { "Identity": "Все", "Rights": "Read", "IsDeny": false }
+      ],
+      "Inheritance": "Keep"
+    },
+    {
+      "Id": "full-access",
+      "Name": "Полный доступ",
+      "Rules": [
+        { "Identity": "Администраторы", "Rights": "FullControl", "IsDeny": false }
+      ],
+      "Inheritance": "Keep"
+    },
+    {
+      "Id": "discipline-ar",
+      "Name": "Доступ раздела АР",
+      "Rules": [
+        { "Identity": "Группа_АР", "Rights": "Modify", "IsDeny": false },
+        { "Identity": "ГИПы", "Rights": "Read", "IsDeny": false }
+      ],
+      "Inheritance": "BreakCopy"
+    },
+    {
+      "Id": "discipline-kr",
+      "Name": "Доступ раздела КР",
+      "Rules": [
+        { "Identity": "Группа_КР", "Rights": "Modify", "IsDeny": false },
+        { "Identity": "ГИПы", "Rights": "Read", "IsDeny": false }
+      ],
+      "Inheritance": "BreakCopy"
+    }
+  ],
+  
+  "AclBindings": [
+    {
+      "NodeTypeId": "DisciplineFolder",
+      "TemplateId": "discipline-ar",
+      "Conditions": [
+        { "AttributePath": "Discipline.Code", "Value": "АР" }
+      ]
+    },
+    {
+      "NodeTypeId": "DisciplineFolder",
+      "TemplateId": "discipline-kr",
+      "Conditions": [
+        { "AttributePath": "Discipline.Code", "Value": "КР" }
+      ]
+    }
+  ],
+  
+  "CompositionSelections": {
+    "Stages": ["П", "Р"],
+    "Queues": ["1"],
+    "Disciplines": ["АР", "КР", "ОВ", "ВК"]
+  }
+}

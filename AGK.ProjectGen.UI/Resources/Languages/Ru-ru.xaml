@@ -1,0 +1,28 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:system="clr-namespace:System;assembly=mscorlib">
+    
+    <!-- General -->
+    <system:String x:Key="Lang.AppName">ProjectGen</system:String>
+    <system:String x:Key="Lang.Cancel">Отмена</system:String>
+    <system:String x:Key="Lang.Save">Сохранить</system:String>
+    <system:String x:Key="Lang.Create">Создать</system:String>
+    <system:String x:Key="Lang.Update">Обновить</system:String>
+    
+    <!-- Navigation -->
+    <system:String x:Key="Lang.Nav.Projects">Проекты</system:String>
+    <system:String x:Key="Lang.Nav.Profiles">Профили</system:String>
+    
+    <!-- Profile Editor -->
+    <system:String x:Key="Lang.Profile.Title">Управление профилями</system:String>
+    <system:String x:Key="Lang.Profile.List">Список профилей</system:String>
+    <system:String x:Key="Lang.Profile.New">Новый профиль</system:String>
+    
+    <!-- Project Wizard -->
+    <system:String x:Key="Lang.Project.Title">Мастер проектов</system:String>
+    <system:String x:Key="Lang.Project.Name">Название проекта</system:String>
+    <system:String x:Key="Lang.Project.Path">Путь к корню</system:String>
+    <system:String x:Key="Lang.Project.Generate">Сгенерировать</system:String>
+    <system:String x:Key="Lang.Project.Preview">Предпросмотр</system:String>
+    
+</ResourceDictionary>
