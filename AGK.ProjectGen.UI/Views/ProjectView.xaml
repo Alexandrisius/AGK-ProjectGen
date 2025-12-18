@@ -185,40 +185,44 @@
             <TabItem Header="② Состав проекта" Style="{StaticResource WizardTabItemStyle}">
                 <Border Style="{StaticResource CardStyle}" Margin="0,0,0,0">
                     <ScrollViewer VerticalScrollBarVisibility="Auto">
-                        <StackPanel>
-                            <TextBlock Text="✅ Выберите элементы структуры" Style="{StaticResource H3Style}" Margin="0,0,0,16"/>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+
+                            <TextBlock Grid.Row="0" Grid.ColumnSpan="2" Text="✅ Выберите элементы структуры" Style="{StaticResource H3Style}" Margin="0,0,0,16"/>
                             
-                            <!-- Динамические группы выбора (чекбоксы) -->
-                            <ItemsControl ItemsSource="{Binding DynamicSelectionGroups}">
-                                <ItemsControl.ItemsPanel>
-                                    <ItemsPanelTemplate>
-                                        <WrapPanel Orientation="Horizontal"/>
-                                    </ItemsPanelTemplate>
-                                </ItemsControl.ItemsPanel>
+                            <!-- LEFT COLUMN: Checkbox Lists (Lists) -->
+                            <ItemsControl Grid.Row="1" Grid.Column="0" ItemsSource="{Binding DynamicSelectionGroups}" Margin="0,0,16,0">
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate>
                                         <Border Background="{StaticResource BgSecondaryBrush}" 
-                                                CornerRadius="8" Padding="12" Margin="0,0,12,12"
-                                                MinWidth="220" MaxWidth="320">
+                                                CornerRadius="8" Padding="12" Margin="0,0,0,12">
                                             <StackPanel>
                                                 <DockPanel Margin="0,0,0,8">
                                                     <TextBlock Text="{Binding DisplayName}" FontWeight="SemiBold" FontSize="14" DockPanel.Dock="Left" Foreground="{StaticResource TextPrimaryBrush}"/>
                                                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                                                        <Button Content="Все" FontSize="11" Padding="6,2" Margin="0,0,4,0"
+                                                        <Button Content="Все" FontSize="12" Padding="8,4" Margin="0,0,4,0"
                                                                 Command="{Binding DataContext.SelectAllInGroupCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                                                 CommandParameter="{Binding}"
                                                                 Style="{StaticResource SecondaryButtonStyle}"/>
-                                                        <Button Content="Нет" FontSize="11" Padding="6,2"
+                                                        <Button Content="Нет" FontSize="12" Padding="8,4"
                                                                 Command="{Binding DataContext.DeselectAllInGroupCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                                                 CommandParameter="{Binding}"
                                                                 Style="{StaticResource SecondaryButtonStyle}"/>
                                                     </StackPanel>
                                                 </DockPanel>
-                                                <ScrollViewer MaxHeight="150" VerticalScrollBarVisibility="Auto">
+                                                <ScrollViewer MaxHeight="200" VerticalScrollBarVisibility="Auto">
                                                     <ItemsControl ItemsSource="{Binding Items}">
                                                         <ItemsControl.ItemTemplate>
                                                             <DataTemplate>
                                                                 <CheckBox IsChecked="{Binding IsSelected}" 
+                                                                          VerticalContentAlignment="Center"
                                                                           Margin="0,4" Cursor="Hand">
                                                                     <TextBlock>
                                                                         <Run Text="{Binding Code, Mode=OneWay}" FontWeight="Bold"/>
@@ -236,17 +240,18 @@
                                 </ItemsControl.ItemTemplate>
                             </ItemsControl>
                             
-                            <!-- Динамические таблицы (Здания, Позиции и др.) -->
-                            <ItemsControl ItemsSource="{Binding DynamicTableFields}">
+                            <!-- RIGHT COLUMN: Dynamic Tables (Tables) -->
+                            <ItemsControl Grid.Row="1" Grid.Column="1" ItemsSource="{Binding DynamicTableFields}">
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate>
                                         <Border Background="{StaticResource BgSecondaryBrush}" 
-                                                CornerRadius="8" Padding="16" Margin="0,8,0,0">
+                                                CornerRadius="8" Padding="16" Margin="0,0,0,16"
+                                                HorizontalAlignment="Stretch">
                                             <DockPanel>
                                                 <DockPanel DockPanel.Dock="Top" Margin="0,0,0,12">
                                                     <TextBlock Text="{Binding DisplayName}" FontWeight="SemiBold" FontSize="14" DockPanel.Dock="Left" Foreground="{StaticResource TextPrimaryBrush}"/>
                                                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                                                        <Button Content="➕ Добавить строку" FontSize="12" Padding="10,6" Margin="0,0,4,0"
+                                                        <Button Content="➕ Добавить" FontSize="12" Padding="10,6" Margin="0,0,4,0"
                                                                 Command="{Binding DataContext.AddTableRowCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                                                 CommandParameter="{Binding}"
                                                                 Style="{StaticResource SecondaryButtonStyle}"/>
@@ -258,16 +263,14 @@
                                                 </DockPanel>
                                                 <DataGrid ItemsSource="{Binding Rows}"
                                                           SelectedItem="{Binding DataContext.SelectedTableRow, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                          Style="{StaticResource ModernDataGridStyle}"
                                                           AutoGenerateColumns="False"
                                                           CanUserAddRows="False"
-                                                          Background="White"
-                                                          GridLinesVisibility="Horizontal"
-                                                          HorizontalGridLinesBrush="{StaticResource BorderBrush}"
                                                           MinHeight="60"
-                                                          MaxHeight="120"
-                                                          RowHeight="28">
+                                                          MaxHeight="200"
+                                                          RowHeight="32">
                                                     <DataGrid.Columns>
-                                                        <DataGridTextColumn Header="Код / №" Binding="{Binding Code}" Width="100"/>
+                                                        <DataGridTextColumn Header="Код / №" Binding="{Binding Code}" Width="120"/>
                                                         <DataGridTextColumn Header="Наименование" Binding="{Binding Name}" Width="*"/>
                                                     </DataGrid.Columns>
                                                 </DataGrid>
@@ -276,7 +279,7 @@
                                     </DataTemplate>
                                 </ItemsControl.ItemTemplate>
                             </ItemsControl>
-                        </StackPanel>
+                        </Grid>
                     </ScrollViewer>
                 </Border>
             </TabItem>
@@ -288,8 +291,8 @@
                         <DockPanel DockPanel.Dock="Top" Margin="0,0,0,16">
                             <StackPanel Orientation="Horizontal">
                                 <TextBlock Text="🌳" FontSize="20" Margin="0,0,10,0"/>
-                                <TextBlock Text="Предварительный просмотр структуры" Style="{StaticResource H3Style}"/>
-                                <TextBlock Text="  (снимите ☑ для исключения папки)" Style="{StaticResource LabelStyle}" VerticalAlignment="Center" Margin="8,0,0,0"/>
+                                <TextBlock Text="Предварительный просмотр структуры" Style="{StaticResource H3Style}" VerticalAlignment="Center"/>
+                                <TextBlock Text="  (снимите ☑ для исключения папки)" Style="{StaticResource LabelStyle}" VerticalAlignment="Center" Margin="8,2,0,0"/>
                             </StackPanel>
                             <Button Content="🔍  Сгенерировать превью" 
                                     Style="{StaticResource SecondaryButtonStyle}"

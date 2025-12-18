@@ -37,6 +37,7 @@ public partial class App : System.Windows.Application
         services.AddSingleton<IProjectManagerService, ProjectManagerService>();
         services.AddSingleton<IAclFormulaEngine, AclFormulaEngine>();
         services.AddSingleton<ISecurityPrincipalRepository, SecurityPrincipalRepository>();
+        services.AddSingleton<IAclPresetRepository, AclPresetRepository>();
         
         // UI Services
         services.AddSingleton<IDialogService, DialogService>();

@@ -32,6 +32,18 @@ public class AppSettingsRepository : IAppSettingsRepository
         await SaveSettingsAsync();
     }
 
+    public Task<ColumnsSettingsConfig?> GetColumnsSettingsAsync(string viewName)
+    {
+        _cachedSettings.ColumnsSettings.TryGetValue(viewName, out var settings);
+        return Task.FromResult(settings);
+    }
+
+    public async Task SaveColumnsSettingsAsync(string viewName, ColumnsSettingsConfig settings)
+    {
+        _cachedSettings.ColumnsSettings[viewName] = settings;
+        await SaveSettingsAsync();
+    }
+
     private AppSettings LoadSettings()
     {
         try
@@ -65,5 +77,6 @@ public class AppSettingsRepository : IAppSettingsRepository
     private class AppSettings
     {
         public string? DefaultProfileId { get; set; }
+        public Dictionary<string, ColumnsSettingsConfig> ColumnsSettings { get; set; } = new();
     }
 }

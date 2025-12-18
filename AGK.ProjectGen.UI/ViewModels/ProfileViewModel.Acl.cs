@@ -11,7 +11,7 @@ public partial class ProfileViewModel
     [RelayCommand]
     private void ConfigureAcl()
     {
-        if (SelectedStructureNode == null) return;
+        if (SelectedStructureNode == null || SelectedProfile == null) return;
         
         // Получаем репозиторий из DI контейнера
         var repository = App.Current.Services.GetService<ISecurityPrincipalRepository>();
@@ -26,6 +26,9 @@ public partial class ProfileViewModel
         var viewModel = new AclRuleEditorViewModel(repository);
         viewModel.LoadRules(SelectedStructureNode.AclRules, $"Узел: {SelectedStructureNode.NodeTypeId}");
         
+        // Загружаем словари и атрибуты профиля для динамического списка
+        viewModel.LoadAttributes(SelectedProfile.Dictionaries, SelectedProfile.ProjectAttributes);
+        
         var dialog = new AclRuleEditorDialog
         {
             DataContext = viewModel,
@@ -39,3 +42,4 @@ public partial class ProfileViewModel
         }
     }
 }
+

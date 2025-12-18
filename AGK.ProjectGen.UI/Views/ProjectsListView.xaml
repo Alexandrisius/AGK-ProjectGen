@@ -22,7 +22,7 @@
                     <TextBlock Text="📋" FontSize="24" Margin="0,0,12,0" VerticalAlignment="Center"/>
                     <StackPanel VerticalAlignment="Center">
                         <TextBlock Text="Мои проекты" Style="{StaticResource H2Style}"/>
-                        <TextBlock Text="Управление созданными проектами" 
+                        <TextBlock Text="Управление созданными проектами · Настройте порядок и ширину столбцов" 
                                    Style="{StaticResource LabelStyle}" Margin="0,2,0,0"/>
                     </StackPanel>
                 </StackPanel>
@@ -46,7 +46,7 @@
         <Border Grid.Row="1" Style="{StaticResource CardStyle}">
             <DockPanel>
                 <!-- Empty State -->
-                <StackPanel Visibility="{Binding Projects.Count, Converter={StaticResource InverseNullToVisibilityConverter}}"
+                <StackPanel Visibility="{Binding ProjectRows.Count, Converter={StaticResource InverseNullToVisibilityConverter}}"
                             HorizontalAlignment="Center" 
                             VerticalAlignment="Center">
                     <TextBlock Text="📂" FontSize="64" HorizontalAlignment="Center" Opacity="0.3"/>
@@ -59,17 +59,18 @@
                                HorizontalAlignment="Center"/>
                 </StackPanel>
                 
-                <!-- Projects DataGrid -->
-                <DataGrid ItemsSource="{Binding Projects}" 
-                          SelectedItem="{Binding SelectedProject}" 
-                          AutoGenerateColumns="False" 
-                          IsReadOnly="True"
-                          Background="Transparent"
-                          BorderThickness="0"
-                          GridLinesVisibility="Horizontal"
-                          HorizontalGridLinesBrush="{StaticResource BorderBrush}"
-                          RowHeight="48"
-                          HeadersVisibility="Column">
+                <!-- Projects DataGrid with dynamic columns -->
+                <DataGrid x:Name="ProjectsDataGrid"
+                          ItemsSource="{Binding ProjectRows}" 
+                          SelectedItem="{Binding SelectedProjectRow}" 
+                          Style="{StaticResource ModernDataGridStyle}"
+                          HeadersVisibility="Column"
+                          AutoGenerateColumns="False"
+                          CanUserReorderColumns="True"
+                          CanUserResizeColumns="True"
+                          CanUserSortColumns="True"
+                          ColumnReordered="ProjectsDataGrid_ColumnReordered"
+                          ColumnHeaderDragCompleted="ProjectsDataGrid_ColumnReordered">
                     
                     <!-- Двойной клик для открытия проекта -->
                     <DataGrid.InputBindings>
@@ -77,69 +78,7 @@
                                       Command="{Binding OpenProjectCommand}"/>
                     </DataGrid.InputBindings>
                     
-                    <DataGrid.ColumnHeaderStyle>
-                        <Style TargetType="DataGridColumnHeader">
-                            <Setter Property="Background" Value="{StaticResource BgSecondaryBrush}"/>
-                            <Setter Property="Foreground" Value="{StaticResource TextSecondaryBrush}"/>
-                            <Setter Property="FontWeight" Value="SemiBold"/>
-                            <Setter Property="FontSize" Value="12"/>
-                            <Setter Property="Padding" Value="12,10"/>
-                            <Setter Property="BorderThickness" Value="0"/>
-                        </Style>
-                    </DataGrid.ColumnHeaderStyle>
-                    
-                    <DataGrid.CellStyle>
-                        <Style TargetType="DataGridCell">
-                            <Setter Property="BorderThickness" Value="0"/>
-                            <Setter Property="Padding" Value="12,0"/>
-                            <Setter Property="VerticalAlignment" Value="Center"/>
-                            <Style.Triggers>
-                                <Trigger Property="IsSelected" Value="True">
-                                    <Setter Property="Background" Value="{StaticResource BgTertiaryBrush}"/>
-                                    <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}"/>
-                                </Trigger>
-                            </Style.Triggers>
-                        </Style>
-                    </DataGrid.CellStyle>
-                    
-                    <DataGrid.RowStyle>
-                        <Style TargetType="DataGridRow">
-                            <Setter Property="Background" Value="Transparent"/>
-                            <Style.Triggers>
-                                <Trigger Property="IsMouseOver" Value="True">
-                                    <Setter Property="Background" Value="{StaticResource BgSecondaryBrush}"/>
-                                </Trigger>
-                                <Trigger Property="IsSelected" Value="True">
-                                    <Setter Property="Background" Value="{StaticResource BgTertiaryBrush}"/>
-                                </Trigger>
-                            </Style.Triggers>
-                        </Style>
-                    </DataGrid.RowStyle>
-                    
-                    <DataGrid.Columns>
-                        <DataGridTemplateColumn Header="НАЗВАНИЕ" Width="*">
-                            <DataGridTemplateColumn.CellTemplate>
-                                <DataTemplate>
-                                    <StackPanel Orientation="Horizontal" Margin="12,0">
-                                        <TextBlock Text="📁" FontSize="16" Margin="0,0,10,0" VerticalAlignment="Center"/>
-                                        <TextBlock Text="{Binding Name}" 
-                                                   VerticalAlignment="Center" 
-                                                   FontWeight="Medium"
-                                                   FontSize="14"/>
-                                    </StackPanel>
-                                </DataTemplate>
-                            </DataGridTemplateColumn.CellTemplate>
-                        </DataGridTemplateColumn>
-                        
-                        <DataGridTextColumn Header="ПУТЬ" 
-                                            Binding="{Binding RootPath}" 
-                                            Width="2*"
-                                            Foreground="{StaticResource TextSecondaryBrush}"/>
-                        
-                        <DataGridTextColumn Header="ИЗМЕНЁН" 
-                                            Binding="{Binding State.LastGenerated, StringFormat='{}{0:dd.MM.yyyy HH:mm}'}" 
-                                            Width="Auto"/>
-                    </DataGrid.Columns>
+                    <!-- Столбцы будут добавлены в code-behind -->
                     
                     <DataGrid.ContextMenu>
                         <ContextMenu>

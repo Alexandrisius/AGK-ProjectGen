@@ -8,7 +8,7 @@
     
     <Grid>
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="280"/>
+            <ColumnDefinition Width="340"/>
             <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
         
@@ -34,19 +34,19 @@
                         Margin="0,12,0,0" 
                         Visibility="{Binding SelectedProfile, Converter={StaticResource NullToVisibilityConverter}}">
                     <StackPanel>
-                        <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
-                            <Button Content="📋 Копировать" 
-                                    Style="{StaticResource SecondaryButtonStyle}" 
-                                    Command="{Binding CopyProfileCommand}"
-                                    ToolTip="Создать копию выбранного профиля"
-                                    Padding="10,6"
-                                    Margin="0,0,6,0"/>
-                            <Button Content="🗑️ Удалить" 
-                                    Style="{StaticResource SecondaryButtonStyle}" 
-                                    Command="{Binding DeleteProfileCommand}"
-                                    ToolTip="Удалить выбранный профиль"
-                                    Padding="10,6"/>
-                        </StackPanel>
+                    <StackPanel Margin="0,0,0,8">
+                        <Button Content="📋 Копировать" 
+                                Style="{StaticResource SecondaryButtonStyle}" 
+                                Command="{Binding CopyProfileCommand}"
+                                ToolTip="Создать копию выбранного профиля"
+                                Padding="12,8"
+                                Margin="0,0,0,6"/>
+                        <Button Content="🗑️ Удалить" 
+                                Style="{StaticResource SecondaryButtonStyle}" 
+                                Command="{Binding DeleteProfileCommand}"
+                                ToolTip="Удалить выбранный профиль"
+                                Padding="12,8"/>
+                    </StackPanel>
                         <Button Command="{Binding SetDefaultProfileCommand}"
                                 Style="{StaticResource SecondaryButtonStyle}" 
                                 HorizontalAlignment="Stretch"
@@ -179,7 +179,7 @@
                         <!-- ========== TAB: Общие ========== -->
                         <TabItem Header="📝 Общие">
                             <ScrollViewer VerticalScrollBarVisibility="Auto" Margin="0,16,0,0">
-                                <StackPanel MaxWidth="500" HorizontalAlignment="Left">
+                                <StackPanel HorizontalAlignment="Left" MinWidth="400">
                                     <TextBlock Text="Название профиля" Style="{StaticResource LabelStyle}" Margin="0,0,0,6"/>
                                     <TextBox Text="{Binding SelectedProfile.Name, UpdateSourceTrigger=PropertyChanged}"
                                              Style="{StaticResource ModernTextBoxStyle}"
@@ -197,7 +197,7 @@
                             <Grid Margin="0,16,0,0">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="280"/>
+                                    <ColumnDefinition Width="320"/>
                                 </Grid.ColumnDefinitions>
                                 
                                 <!-- Список атрибутов -->
@@ -215,18 +215,12 @@
                                     
                                     <DataGrid ItemsSource="{Binding SelectedProfile.ProjectAttributes}" 
                                               SelectedItem="{Binding SelectedAttribute}"
-                                              AutoGenerateColumns="False" 
-                                              CanUserAddRows="False"
-                                              Background="Transparent"
-                                              BorderThickness="0"
-                                              GridLinesVisibility="Horizontal"
-                                              HorizontalGridLinesBrush="{StaticResource BorderBrush}"
-                                              RowHeight="40">
+                                              Style="{StaticResource ModernDataGridStyle}">
                                         <DataGrid.Columns>
-                                            <DataGridTextColumn Header="Ключ" Binding="{Binding Key}" Width="120"/>
+                                            <DataGridTextColumn Header="Ключ" Binding="{Binding Key}" Width="150"/>
                                             <DataGridTextColumn Header="Название" Binding="{Binding DisplayName}" Width="*"/>
-                                            <DataGridTextColumn Header="Тип" Binding="{Binding Type}" Width="100"/>
-                                            <DataGridCheckBoxColumn Header="Обяз." Binding="{Binding IsRequired}" Width="60"/>
+                                            <DataGridTextColumn Header="Тип" Binding="{Binding Type}" Width="140"/>
+                                            <DataGridCheckBoxColumn Header="Обяз." Binding="{Binding IsRequired}" Width="80"/>
                                         </DataGrid.Columns>
                                     </DataGrid>
                                 </DockPanel>
@@ -269,14 +263,16 @@
                                                   Style="{StaticResource ModernComboBoxStyle}"
                                                   Margin="0,0,0,12"/>
                                         
-                                        <CheckBox Content="Обязательный" 
+                                        <CheckBox Content="Обязательное поле" 
                                                   IsChecked="{Binding SelectedAttribute.IsRequired}" 
                                                   Margin="0,0,0,8"/>
-                                        <CheckBox Content="Показывать при создании проекта" 
+                                        <CheckBox Content="Показывать при создании" 
                                                   IsChecked="{Binding SelectedAttribute.IsProjectAttribute}" 
+                                                  ToolTip="Показывать при создании проекта"
                                                   Margin="0,0,0,8"/>
-                                        <CheckBox Content="Использовать в формулах именования" 
+                                        <CheckBox Content="Использовать в формулах" 
                                                   IsChecked="{Binding SelectedAttribute.CanUseInFormula}" 
+                                                  ToolTip="Использовать в формулах именования"
                                                   Margin="0,0,0,12"/>
                                         
                                         <TextBlock Text="Значение по умолчанию" Style="{StaticResource LabelStyle}" Margin="0,0,0,6"/>
@@ -303,7 +299,7 @@
                         <TabItem Header="📚 Словари">
                             <Grid Margin="0,16,0,0">
                                 <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="200"/>
+                                    <ColumnDefinition Width="340"/>
                                     <ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
                                 
@@ -324,7 +320,7 @@
                                                  Background="Transparent" BorderThickness="0">
                                             <ListBox.ItemTemplate>
                                                 <DataTemplate>
-                                                    <TextBlock Text="{Binding DisplayName}" Margin="4"/>
+                                                    <TextBlock Text="{Binding DisplayName}" Margin="4" FontSize="14"/>
                                                 </DataTemplate>
                                             </ListBox.ItemTemplate>
                                         </ListBox>
@@ -357,6 +353,7 @@
                                             
                                             <CheckBox Content="Заполняется при создании проекта" 
                                                       IsChecked="{Binding SelectedDictionary.IsDynamic}" 
+                                                      VerticalContentAlignment="Center"
                                                       Margin="0,12,0,0"
                                                       ToolTip="Если включено — элементы не задаются в профиле, а вводятся при создании проекта"/>
                                         </StackPanel>
@@ -375,14 +372,12 @@
                                             
                                             <DataGrid ItemsSource="{Binding SelectedDictionary.Items}"
                                                       SelectedItem="{Binding SelectedDictionaryItem}"
-                                                      AutoGenerateColumns="False"
-                                                      CanUserAddRows="False"
-                                                      Background="White"
-                                                      GridLinesVisibility="Horizontal"
-                                                      HorizontalGridLinesBrush="{StaticResource BorderBrush}"
-                                                      RowHeight="36">
+                                                      Style="{StaticResource ModernDataGridStyle}"
+                                                      RowHeight="36"
+                                                      HorizontalAlignment="Left"
+                                                      MaxWidth="800">
                                                 <DataGrid.Columns>
-                                                    <DataGridTextColumn Header="Код" Binding="{Binding Code}" Width="100"/>
+                                                    <DataGridTextColumn Header="Код" Binding="{Binding Code}" Width="150"/>
                                                     <DataGridTextColumn Header="Название" Binding="{Binding Name}" Width="*"/>
                                                 </DataGrid.Columns>
                                             </DataGrid>
@@ -414,15 +409,11 @@
                                 </StackPanel>
                                 
                                 <DataGrid ItemsSource="{Binding SelectedProfile.NodeTypes}" 
-                                          AutoGenerateColumns="False" 
-                                          CanUserAddRows="False"
-                                          Background="Transparent"
-                                          BorderThickness="0"
-                                          GridLinesVisibility="Horizontal"
-                                          HorizontalGridLinesBrush="{StaticResource BorderBrush}"
+                                          Style="{StaticResource ModernDataGridStyle}"
+                                          IsReadOnly="False"
                                           RowHeight="44">
                                     <DataGrid.Columns>
-                                        <DataGridTextColumn Header="ID" Binding="{Binding TypeId}" Width="*"/>
+                                        <DataGridTextColumn Header="ID" Binding="{Binding TypeId}" Width="*" IsReadOnly="True"/>
                                         <DataGridTextColumn Header="Название" Binding="{Binding DisplayName}" Width="*"/>
                                         <DataGridTextColumn Header="Формула имени" Binding="{Binding DefaultFormula}" Width="2*"/>
                                     </DataGrid.Columns>
@@ -505,13 +496,13 @@
                                                       SelectedValuePath="TypeId" 
                                                       SelectedValue="{Binding SelectedStructureNode.NodeTypeId}"
                                                       Style="{StaticResource ModernComboBoxStyle}"
-                                                      Margin="0,0,0,12"/>
+                                                      Margin="0,0,0,16"/>
                                                       
                                             <TextBlock Text="Кратность" Style="{StaticResource LabelStyle}" Margin="0,0,0,6"/>
                                             <ComboBox SelectedValue="{Binding SelectedStructureNode.Multiplicity, Converter={StaticResource EnumToStringConverter}}"
                                                       SelectedValuePath="Tag"
                                                       Style="{StaticResource ModernComboBoxStyle}"
-                                                      Margin="0,0,0,12"
+                                                      Margin="0,0,0,16"
                                                       IsEnabled="{Binding SelectedStructureNode.IsRoot, Converter={StaticResource InverseBoolConverter}}"
                                                       ToolTip="Single — одна папка. Dictionary — по словарю. (Для корневого узла — только Single)">
                                                 <ComboBoxItem Content="Single (одна папка)" Tag="Single"/>
@@ -526,7 +517,7 @@
                                                           SelectedValuePath="Key"
                                                           SelectedValue="{Binding SelectedStructureNode.SourceKey}"
                                                           Style="{StaticResource ModernComboBoxStyle}"
-                                                          Margin="0,0,0,12"
+                                                          Margin="0,0,0,16"
                                                           ToolTip="Выберите словарь для привязки папки"
                                                           SelectionChanged="OnSourceKeyChanged"/>
                                             </StackPanel>
@@ -553,19 +544,19 @@
                                                           SelectedValuePath="Code"
                                                           SelectedValue="{Binding SelectedStructureNode.SelectedItemCode, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                                           Style="{StaticResource ModernComboBoxStyle}"
-                                                          Margin="0,0,0,12"
+                                                          Margin="0,0,0,16"
                                                           ToolTip="Выберите элемент для присвоения этой папке (для формул)"/>
                                             </StackPanel>
                                             
                                             <TextBlock Text="Формула имени (override)" Style="{StaticResource LabelStyle}" Margin="0,0,0,6"/>
                                             <TextBox Text="{Binding SelectedStructureNode.NamingFormulaOverride}" 
-                                                     Style="{StaticResource ModernTextBoxStyle}" Margin="0,0,0,16"/>
+                                                     Style="{StaticResource ModernTextBoxStyle}" Margin="0,0,0,24"/>
                                             
                                             <!-- ACL Button -->
                                             <Button Content="🔐 Настроить ACL" 
                                                     Style="{StaticResource SecondaryButtonStyle}"
                                                     Command="{Binding ConfigureAclCommand}" 
-                                                    Padding="12,8"
+                                                    Padding="12,10"
                                                     ToolTip="Настроить правила доступа для данного узла структуры"/>
                                         </StackPanel>
                                     </Border>
