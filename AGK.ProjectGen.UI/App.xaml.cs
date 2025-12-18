@@ -28,6 +28,7 @@ public partial class App : System.Windows.Application
         services.AddSingleton<IAclService, AclService>();
         services.AddSingleton<IProfileRepository, AGK.ProjectGen.Infrastructure.Repositories.ProfileRepository>();
         services.AddSingleton<IProjectRepository, AGK.ProjectGen.Infrastructure.Repositories.JsonProjectRepository>();
+        services.AddSingleton<IAppSettingsRepository, AGK.ProjectGen.Infrastructure.Repositories.AppSettingsRepository>();
 
         // Application
         services.AddSingleton<INamingEngine, NamingEngine>();

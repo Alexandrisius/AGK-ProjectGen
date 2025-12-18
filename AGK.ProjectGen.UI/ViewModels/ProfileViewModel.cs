@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.Text.Json;
 using AGK.ProjectGen.Application.Interfaces;
 using AGK.ProjectGen.Domain.Enums;
 using AGK.ProjectGen.Domain.Schema;
@@ -10,6 +11,7 @@ namespace AGK.ProjectGen.UI.ViewModels;
 public partial class ProfileViewModel : ObservableObject
 {
     private readonly IProfileRepository _repository;
+    private readonly IAppSettingsRepository _appSettings;
     
     [ObservableProperty]
     private ObservableCollection<ProfileSchema> _profiles = new();
@@ -39,11 +41,18 @@ public partial class ProfileViewModel : ObservableObject
     [ObservableProperty]
     private string _saveButtonText = "💾 Сохранить профиль";
 
+    /// <summary>
+    /// ID профиля по умолчанию
+    /// </summary>
+    [ObservableProperty]
+    private string? _defaultProfileId;
+
     private System.Timers.Timer? _saveStatusTimer;
 
-    public ProfileViewModel(IProfileRepository repository)
+    public ProfileViewModel(IProfileRepository repository, IAppSettingsRepository appSettings)
     {
         _repository = repository;
+        _appSettings = appSettings;
         LoadProfilesCommand.Execute(null);
     }
 
@@ -61,7 +70,11 @@ public partial class ProfileViewModel : ObservableObject
         }
 
         Profiles = new ObservableCollection<ProfileSchema>(list);
+        
+        // Загружаем профиль по умолчанию
+        DefaultProfileId = await _appSettings.GetDefaultProfileIdAsync();
     }
+
 
     private ProfileSchema CreateDemoProfile()
     {
@@ -222,6 +235,105 @@ public partial class ProfileViewModel : ObservableObject
         newProfile.Name = "Новый профиль";
         Profiles.Add(newProfile);
         SelectedProfile = newProfile;
+    }
+
+    /// <summary>
+    /// Копирование текущего профиля (глубокая копия)
+    /// </summary>
+    [RelayCommand]
+    private async Task CopyProfile()
+    {
+        if (SelectedProfile == null) return;
+        
+        // Глубокая копия через JSON сериализацию
+        var json = JsonSerializer.Serialize(SelectedProfile);
+        var copy = JsonSerializer.Deserialize<ProfileSchema>(json);
+        
+        if (copy != null)
+        {
+            // Генерируем новый уникальный ID и обновляем имя
+            copy.Id = Guid.NewGuid().ToString();
+            copy.Name = $"{SelectedProfile.Name} (копия)";
+            
+            // Сохраняем и добавляем в список
+            await _repository.SaveAsync(copy);
+            Profiles.Add(copy);
+            SelectedProfile = copy;
+        }
+    }
+
+    /// <summary>
+    /// Удаление выбранного профиля
+    /// </summary>
+    [RelayCommand]
+    private async Task DeleteProfile()
+    {
+        if (SelectedProfile == null) return;
+        
+        var result = System.Windows.MessageBox.Show(
+            $"Вы уверены, что хотите удалить профиль \"{SelectedProfile.Name}\"?\n\nЭто действие нельзя отменить.",
+            "Подтверждение удаления",
+            System.Windows.MessageBoxButton.YesNo,
+            System.Windows.MessageBoxImage.Warning);
+        
+        if (result == System.Windows.MessageBoxResult.Yes)
+        {
+            var profileToDelete = SelectedProfile;
+            var index = Profiles.IndexOf(profileToDelete);
+            
+            // Удаляем из репозитория
+            await _repository.DeleteAsync(profileToDelete.Id);
+            
+            // Если это профиль по умолчанию, сбрасываем настройку
+            if (DefaultProfileId == profileToDelete.Id)
+            {
+                DefaultProfileId = null;
+                await _appSettings.SetDefaultProfileIdAsync(null);
+            }
+            
+            // Удаляем из списка
+            Profiles.Remove(profileToDelete);
+            
+            // Выбираем соседний профиль
+            if (Profiles.Count > 0)
+            {
+                SelectedProfile = Profiles[Math.Min(index, Profiles.Count - 1)];
+            }
+            else
+            {
+                SelectedProfile = null;
+            }
+        }
+    }
+
+    /// <summary>
+    /// Установка/снятие профиля по умолчанию
+    /// </summary>
+    [RelayCommand]
+    private async Task SetDefaultProfile()
+    {
+        if (SelectedProfile == null) return;
+        
+        if (DefaultProfileId == SelectedProfile.Id)
+        {
+            // Снимаем отметку "по умолчанию"
+            DefaultProfileId = null;
+        }
+        else
+        {
+            // Устанавливаем как профиль по умолчанию
+            DefaultProfileId = SelectedProfile.Id;
+        }
+        
+        await _appSettings.SetDefaultProfileIdAsync(DefaultProfileId);
+    }
+
+    /// <summary>
+    /// Проверяет, является ли переданный профиль профилем по умолчанию
+    /// </summary>
+    public bool IsDefaultProfile(ProfileSchema? profile)
+    {
+        return profile != null && DefaultProfileId == profile.Id;
     }
 
     [RelayCommand]

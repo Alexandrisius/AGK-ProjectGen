@@ -122,3 +122,6 @@ karma.conf.js
 
 # publish artifacts
 *.pubxml
+publish/
+bin/Installer/
+

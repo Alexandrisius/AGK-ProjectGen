@@ -22,6 +22,7 @@
             <conv:InverseBoolConverter x:Key="InverseBoolConverter"/>
             <conv:CountToVisibilityConverter x:Key="CountToVisibilityConverter"/>
             <conv:NullToBoolConverter x:Key="NullToBoolConverter"/>
+            <conv:EqualityConverter x:Key="EqualityConverter"/>
         </ResourceDictionary>
     </Application.Resources>
 

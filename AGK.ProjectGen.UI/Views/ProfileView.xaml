@@ -29,6 +29,41 @@
                             HorizontalAlignment="Stretch"/>
                 </StackPanel>
                 
+                <!-- Action Buttons for Selected Profile -->
+                <Border DockPanel.Dock="Bottom" 
+                        Margin="0,12,0,0" 
+                        Visibility="{Binding SelectedProfile, Converter={StaticResource NullToVisibilityConverter}}">
+                    <StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                            <Button Content="📋 Копировать" 
+                                    Style="{StaticResource SecondaryButtonStyle}" 
+                                    Command="{Binding CopyProfileCommand}"
+                                    ToolTip="Создать копию выбранного профиля"
+                                    Padding="10,6"
+                                    Margin="0,0,6,0"/>
+                            <Button Content="🗑️ Удалить" 
+                                    Style="{StaticResource SecondaryButtonStyle}" 
+                                    Command="{Binding DeleteProfileCommand}"
+                                    ToolTip="Удалить выбранный профиль"
+                                    Padding="10,6"/>
+                        </StackPanel>
+                        <Button Command="{Binding SetDefaultProfileCommand}"
+                                Style="{StaticResource SecondaryButtonStyle}" 
+                                HorizontalAlignment="Stretch"
+                                Padding="10,6">
+                            <Button.Content>
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock x:Name="StarIcon" Text="⭐" Margin="0,0,6,0"/>
+                                    <TextBlock Text="По умолчанию"/>
+                                </StackPanel>
+                            </Button.Content>
+                            <Button.ToolTip>
+                                <TextBlock Text="Сделать этот профиль профилем по умолчанию (или снять отметку)"/>
+                            </Button.ToolTip>
+                        </Button>
+                    </StackPanel>
+                </Border>
+                
                 <!-- Profile List -->
                 <ListView ItemsSource="{Binding Profiles}" 
                           SelectedItem="{Binding SelectedProfile}"
@@ -62,10 +97,35 @@
                     </ListView.ItemContainerStyle>
                     <ListView.ItemTemplate>
                         <DataTemplate>
-                            <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="📋" FontSize="14" Margin="0,0,10,0" Opacity="0.7"/>
-                                <TextBlock Text="{Binding Name}" FontSize="14"/>
-                            </StackPanel>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" Text="📋" FontSize="14" Margin="0,0,10,0" Opacity="0.7"/>
+                                <TextBlock Grid.Column="1" Text="{Binding Name}" FontSize="14" VerticalAlignment="Center"/>
+                                <TextBlock Grid.Column="2" Text="⭐" FontSize="12" Opacity="0.8" 
+                                           VerticalAlignment="Center" Margin="8,0,0,0"
+                                           ToolTip="Профиль по умолчанию">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Value="True">
+                                                    <DataTrigger.Binding>
+                                                        <MultiBinding Converter="{StaticResource EqualityConverter}">
+                                                            <Binding Path="Id"/>
+                                                            <Binding Path="DataContext.DefaultProfileId" RelativeSource="{RelativeSource AncestorType=ListView}"/>
+                                                        </MultiBinding>
+                                                    </DataTrigger.Binding>
+                                                    <Setter Property="Visibility" Value="Visible"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                            </Grid>
                         </DataTemplate>
                     </ListView.ItemTemplate>
                 </ListView>
