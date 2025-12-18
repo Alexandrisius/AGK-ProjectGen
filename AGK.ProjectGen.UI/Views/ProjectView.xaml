@@ -202,7 +202,7 @@
                                                 MinWidth="220" MaxWidth="320">
                                             <StackPanel>
                                                 <DockPanel Margin="0,0,0,8">
-                                                    <TextBlock Text="{Binding DisplayName}" FontWeight="SemiBold" FontSize="14" DockPanel.Dock="Left"/>
+                                                    <TextBlock Text="{Binding DisplayName}" FontWeight="SemiBold" FontSize="14" DockPanel.Dock="Left" Foreground="{StaticResource TextPrimaryBrush}"/>
                                                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
                                                         <Button Content="Все" FontSize="11" Padding="6,2" Margin="0,0,4,0"
                                                                 Command="{Binding DataContext.SelectAllInGroupCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
@@ -244,7 +244,7 @@
                                                 CornerRadius="8" Padding="16" Margin="0,8,0,0">
                                             <DockPanel>
                                                 <DockPanel DockPanel.Dock="Top" Margin="0,0,0,12">
-                                                    <TextBlock Text="{Binding DisplayName}" FontWeight="SemiBold" FontSize="14" DockPanel.Dock="Left"/>
+                                                    <TextBlock Text="{Binding DisplayName}" FontWeight="SemiBold" FontSize="14" DockPanel.Dock="Left" Foreground="{StaticResource TextPrimaryBrush}"/>
                                                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
                                                         <Button Content="➕ Добавить строку" FontSize="12" Padding="10,6" Margin="0,0,4,0"
                                                                 Command="{Binding DataContext.AddTableRowCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"

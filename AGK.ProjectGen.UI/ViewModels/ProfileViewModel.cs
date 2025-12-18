@@ -26,6 +26,13 @@ public partial class ProfileViewModel : ObservableObject
     [ObservableProperty]
     private DictionaryItem? _selectedDictionaryItem;
 
+    /// <summary>
+    /// Элементы словаря для выбора в Single-узле.
+    /// Обновляется при изменении SelectedStructureNode.SourceKey.
+    /// </summary>
+    [ObservableProperty]
+    private ObservableCollection<DictionaryItem> _selectedDictionaryItems = new();
+
     [ObservableProperty]
     private bool _isSaveSuccess;
 
@@ -359,8 +366,7 @@ public partial class ProfileViewModel : ObservableObject
         if (SelectedProfile == null) return;
         SelectedProfile.Structure.RootNodes.Add(new StructureNodeDefinition 
         { 
-            NodeTypeId = "Folder", 
-            NamingFormulaOverride = "New Folder" 
+            NodeTypeId = "Folder"
         });
     }
     
@@ -370,8 +376,7 @@ public partial class ProfileViewModel : ObservableObject
         if (SelectedStructureNode == null) return;
         SelectedStructureNode.Children.Add(new StructureNodeDefinition 
         { 
-            NodeTypeId = "Folder", 
-            NamingFormulaOverride = "New Child" 
+            NodeTypeId = "Folder"
         });
     }
     

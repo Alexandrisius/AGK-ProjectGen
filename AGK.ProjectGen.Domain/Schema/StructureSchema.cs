@@ -1,6 +1,8 @@
 using AGK.ProjectGen.Domain.AccessControl;
 using AGK.ProjectGen.Domain.Enums;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
+using System.Runtime.CompilerServices;
 
 namespace AGK.ProjectGen.Domain.Schema;
 
@@ -10,7 +12,7 @@ public class StructureSchema
     public ObservableCollection<StructureNodeDefinition> RootNodes { get; set; } = new();
 }
 
-public class StructureNodeDefinition
+public class StructureNodeDefinition : INotifyPropertyChanged
 {
     public string Id { get; set; } = Guid.NewGuid().ToString(); // Unique ID in schema
     public string NodeTypeId { get; set; } = string.Empty; // Ref to NodeTypeSchema
@@ -23,6 +25,24 @@ public class StructureNodeDefinition
     // Multiplicity source
     public MultiplicitySource Multiplicity { get; set; } = MultiplicitySource.Single;
     public string? SourceKey { get; set; } // e.g. "Stages" (Dictionary) or "Buildings" (Table)
+    
+    /// <summary>
+    /// Для узлов с Multiplicity=Single: код выбранного элемента словаря.
+    /// Позволяет Single-узлу вести себя как элемент словаря с наследованием контекста.
+    /// </summary>
+    private string? _selectedItemCode;
+    public string? SelectedItemCode 
+    { 
+        get => _selectedItemCode;
+        set
+        {
+            if (_selectedItemCode != value)
+            {
+                _selectedItemCode = value;
+                OnPropertyChanged();
+            }
+        }
+    }
     
     // Naming override (optional, otherwise use NodeType default)
     public string? NamingFormulaOverride { get; set; }
@@ -38,4 +58,10 @@ public class StructureNodeDefinition
     /// Применяются при создании папок на основе условий из контекста.
     /// </summary>
     public ObservableCollection<AclRuleDefinition> AclRules { get; set; } = new();
+    
+    public event PropertyChangedEventHandler? PropertyChanged;
+    protected virtual void OnPropertyChanged([CallerMemberName] string? propertyName = null)
+    {
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+    }
 }

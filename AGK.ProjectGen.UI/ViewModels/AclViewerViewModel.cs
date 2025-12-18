@@ -52,4 +52,37 @@ public partial class AclViewerViewModel : ObservableObject
             AclRules.Clear();
         }
     }
+    
+    /// <summary>
+    /// Загружает превью ACL для папки, которая ещё не создана.
+    /// Показывает правила из overrides + PlannedAcl.
+    /// </summary>
+    public void LoadPreview(string path, IEnumerable<AclRule> overrides, IEnumerable<AclRule>? plannedRules)
+    {
+        Path = path;
+        AclRules.Clear();
+        
+        // Сначала добавляем overrides (имеют приоритет)
+        foreach (var rule in overrides)
+        {
+            AclRules.Add(rule);
+        }
+        
+        // Затем добавляем PlannedAcl из формул профиля
+        if (plannedRules != null)
+        {
+            foreach (var rule in plannedRules)
+            {
+                // Не дублировать если уже есть в overrides
+                if (!AclRules.Any(r => r.Identity == rule.Identity))
+                {
+                    AclRules.Add(rule);
+                }
+            }
+        }
+        
+        StatusMessage = AclRules.Count > 0 
+            ? $"Превью: {AclRules.Count} правил (папка ещё не создана)"
+            : "Нет назначенных правил (папка ещё не создана)";
+    }
 }

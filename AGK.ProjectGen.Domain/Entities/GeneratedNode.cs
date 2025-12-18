@@ -13,6 +13,11 @@ public class GeneratedNode : INotifyPropertyChanged
     public string Name { get; set; } = string.Empty; // Calculated name
     public string FullPath { get; set; } = string.Empty;
     
+    /// <summary>
+    /// Признак корневого узла структуры. Такой узел нельзя исключить галочкой.
+    /// </summary>
+    public bool IsRoot { get; set; } = false;
+    
     // Formula used to generate this node's name (for recalculation)
     public string? NameFormula { get; set; }
     

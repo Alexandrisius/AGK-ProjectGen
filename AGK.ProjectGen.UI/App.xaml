@@ -19,6 +19,9 @@
             <conv:BoolToVisibilityConverter x:Key="InverseBoolToVisibilityConverter" Invert="True"/>
             <conv:NodeOperationDeleteToVisibilityConverter x:Key="NodeOperationDeleteToVisibilityConverter"/>
             <conv:NodeOperationToEnabledConverter x:Key="NodeOperationToEnabledConverter"/>
+            <conv:InverseBoolConverter x:Key="InverseBoolConverter"/>
+            <conv:CountToVisibilityConverter x:Key="CountToVisibilityConverter"/>
+            <conv:NullToBoolConverter x:Key="NullToBoolConverter"/>
         </ResourceDictionary>
     </Application.Resources>
 

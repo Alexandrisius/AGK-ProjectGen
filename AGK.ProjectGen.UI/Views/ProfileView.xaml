@@ -410,7 +410,8 @@
                                                   Background="Transparent" BorderThickness="0">
                                             <TreeView.ItemTemplate>
                                                 <HierarchicalDataTemplate ItemsSource="{Binding Children}">
-                                                    <StackPanel Orientation="Horizontal" Margin="4">
+                                                    <StackPanel Orientation="Horizontal" Margin="4"
+                                                                MouseLeftButtonDown="OnStructureNodeClicked">
                                                         <TextBlock Margin="0,0,8,0" FontSize="14">
                                                             <TextBlock.Style>
                                                                 <Style TargetType="TextBlock">
@@ -451,18 +452,50 @@
                                                       SelectedValuePath="Tag"
                                                       Style="{StaticResource ModernComboBoxStyle}"
                                                       Margin="0,0,0,12"
-                                                      ToolTip="Single — одна папка. Dictionary — по словарю (статическому или динамическому).">
+                                                      IsEnabled="{Binding SelectedStructureNode.IsRoot, Converter={StaticResource InverseBoolConverter}}"
+                                                      ToolTip="Single — одна папка. Dictionary — по словарю. (Для корневого узла — только Single)">
                                                 <ComboBoxItem Content="Single (одна папка)" Tag="Single"/>
                                                 <ComboBoxItem Content="Dictionary (по словарю)" Tag="Dictionary"/>
                                             </ComboBox>
                                             
-                                            <TextBlock Text="Источник (словарь)" Style="{StaticResource LabelStyle}" Margin="0,0,0,6"/>
-                                            <ComboBox ItemsSource="{Binding SelectedProfile.Dictionaries}"
-                                                      DisplayMemberPath="DisplayName"
-                                                      SelectedValuePath="Key"
-                                                      SelectedValue="{Binding SelectedStructureNode.SourceKey}"
-                                                      Style="{StaticResource ModernComboBoxStyle}"
-                                                      Margin="0,0,0,12"/>
+                                            <!-- Источник (словарь) — для Single и Dictionary, если НЕ корень -->
+                                            <StackPanel Visibility="{Binding SelectedStructureNode.IsRoot, Converter={StaticResource InverseBoolToVisibilityConverter}}">
+                                                <TextBlock Text="Источник (словарь)" Style="{StaticResource LabelStyle}" Margin="0,0,0,6"/>
+                                                <ComboBox ItemsSource="{Binding SelectedProfile.Dictionaries}"
+                                                          DisplayMemberPath="DisplayName"
+                                                          SelectedValuePath="Key"
+                                                          SelectedValue="{Binding SelectedStructureNode.SourceKey}"
+                                                          Style="{StaticResource ModernComboBoxStyle}"
+                                                          Margin="0,0,0,12"
+                                                          ToolTip="Выберите словарь для привязки папки"
+                                                          SelectionChanged="OnSourceKeyChanged"/>
+                                            </StackPanel>
+                                            
+                                            <!-- Выбор элемента словаря (только для Single с выбранным словарём) -->
+                                            <StackPanel>
+                                                <StackPanel.Style>
+                                                    <Style TargetType="StackPanel">
+                                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                                        <Style.Triggers>
+                                                            <MultiDataTrigger>
+                                                                <MultiDataTrigger.Conditions>
+                                                                    <Condition Binding="{Binding SelectedStructureNode.Multiplicity}" Value="Single"/>
+                                                                    <Condition Binding="{Binding SelectedStructureNode.SourceKey, Converter={StaticResource NullToBoolConverter}}" Value="False"/>
+                                                                </MultiDataTrigger.Conditions>
+                                                                <Setter Property="Visibility" Value="Visible"/>
+                                                            </MultiDataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </StackPanel.Style>
+                                                <TextBlock Text="Элемент словаря" Style="{StaticResource LabelStyle}" Margin="0,0,0,6"/>
+                                                <ComboBox ItemsSource="{Binding SelectedDictionaryItems}"
+                                                          DisplayMemberPath="Name"
+                                                          SelectedValuePath="Code"
+                                                          SelectedValue="{Binding SelectedStructureNode.SelectedItemCode, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                          Style="{StaticResource ModernComboBoxStyle}"
+                                                          Margin="0,0,0,12"
+                                                          ToolTip="Выберите элемент для присвоения этой папке (для формул)"/>
+                                            </StackPanel>
                                             
                                             <TextBlock Text="Формула имени (override)" Style="{StaticResource LabelStyle}" Margin="0,0,0,6"/>
                                             <TextBox Text="{Binding SelectedStructureNode.NamingFormulaOverride}" 

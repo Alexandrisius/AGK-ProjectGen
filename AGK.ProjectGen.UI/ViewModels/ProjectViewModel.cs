@@ -564,26 +564,41 @@ public partial class ProjectViewModel : ObservableObject
 
     private GeneratedNode GenerateStructureWithSelections(Project project, ProfileSchema profile)
     {
-        var rootPath = Path.Combine(project.RootPath, $"{ProjectCode}_{ProjectShortName}");
+        // Найти определение корневого узла из структуры профиля (IsRoot = true)
+        var rootDef = profile.Structure.RootNodes.FirstOrDefault(n => n.IsRoot) 
+                    ?? profile.Structure.RootNodes.FirstOrDefault();
+        
+        // Получить тип узла для формулы именования
+        var nodeType = rootDef != null 
+            ? profile.NodeTypes.FirstOrDefault(nt => nt.TypeId == rootDef.NodeTypeId)
+            : null;
+        var formula = rootDef?.NamingFormulaOverride ?? nodeType?.DefaultFormula ?? "{ProjectCode}_{ProjectShortName}";
         
         var rootNode = new GeneratedNode
         {
-            NodeTypeId = "ProjectRoot",
-            Name = $"{ProjectCode}_{ProjectShortName}",
-            FullPath = rootPath
+            NodeTypeId = rootDef?.NodeTypeId ?? "ProjectRoot",
+            NameFormula = formula,
+            IsRoot = true
         };
         
         // Добавляем атрибуты проекта в контекст корня
-        // Это позволит использовать {ProjectCode}, {Client} и т.д. во всех дочерних узлах
         foreach (var attr in DynamicAttributes)
         {
             rootNode.ContextAttributes[attr.Key] = attr.Value;
         }
+        
+        // Вычисляем имя по формуле
+        var context = rootNode.ContextAttributes.ToDictionary(k => k.Key, v => v.Value?.ToString() ?? "");
+        rootNode.Name = _namingEngine.ApplyFormula(formula, context);
+        rootNode.FullPath = Path.Combine(project.RootPath, rootNode.Name);
 
-        // Рекурсивно генерируем структуру на основе определения профиля
-        foreach (var structureDef in profile.Structure.RootNodes)
+        // Рекурсивно генерируем структуру от дочерних узлов корня
+        if (rootDef != null)
         {
-            GenerateNodesRecursive(structureDef, rootNode, profile);
+            foreach (var childDef in rootDef.Children)
+            {
+                GenerateNodesRecursive(childDef, rootNode, profile);
+            }
         }
 
         return rootNode;
@@ -597,24 +612,53 @@ public partial class ProjectViewModel : ObservableObject
     private void GenerateNodesRecursive(StructureNodeDefinition definition, GeneratedNode parent, ProfileSchema profile)
     {
         var nodeType = profile.NodeTypes.FirstOrDefault(nt => nt.TypeId == definition.NodeTypeId);
-        var formula = definition.NamingFormulaOverride ?? nodeType?.DefaultFormula ?? "{Code}";
+        
+        // Игнорируем устаревшие дефолтные значения
+        var formulaOverride = definition.NamingFormulaOverride;
+        if (formulaOverride == "New Child" || formulaOverride == "New Folder")
+            formulaOverride = null;
+            
+        var formula = formulaOverride ?? nodeType?.DefaultFormula ?? definition.NodeTypeId;
 
         if (definition.Multiplicity == Domain.Enums.MultiplicitySource.Single || string.IsNullOrEmpty(definition.SourceKey))
         {
             // Single — один узел
+            // Наследуем контекст от родителя
+            var nodeContext = new Dictionary<string, object>();
+            foreach (var ctx in parent.ContextAttributes)
+            {
+                nodeContext[ctx.Key] = ctx.Value;
+            }
+            
+            // Если для Single-узла задан SourceKey и SelectedItemCode — добавляем контекст словаря
+            if (!string.IsNullOrEmpty(definition.SourceKey) && !string.IsNullOrEmpty(definition.SelectedItemCode))
+            {
+                var singleDict = profile.Dictionaries.FirstOrDefault(d => d.Key == definition.SourceKey);
+                var item = singleDict?.Items.FirstOrDefault(i => i.Code == definition.SelectedItemCode);
+                if (item != null)
+                {
+                    nodeContext[definition.SourceKey] = new Dictionary<string, object>
+                    {
+                        ["Code"] = item.Code,
+                        ["Name"] = item.Name
+                    };
+                }
+            }
+            
+            // Вычисляем имя по формуле
+            var formulaContext = BuildFormulaContext(nodeContext);
+            var nodeName = _namingEngine.ApplyFormula(formula, formulaContext);
+            if (string.IsNullOrEmpty(nodeName))
+                nodeName = definition.NodeTypeId; // Fallback
+            
             var node = new GeneratedNode
             {
                 NodeTypeId = definition.NodeTypeId,
-                Name = definition.NodeTypeId,
-                FullPath = Path.Combine(parent.FullPath, definition.NodeTypeId),
-                NameFormula = formula
+                Name = nodeName,
+                FullPath = Path.Combine(parent.FullPath, nodeName),
+                NameFormula = formula,
+                ContextAttributes = nodeContext
             };
-            
-            // Наследуем контекст от родителя
-            foreach (var ctx in parent.ContextAttributes)
-            {
-                node.ContextAttributes[ctx.Key] = ctx.Value;
-            }
 
             parent.Children.Add(node);
 
@@ -647,26 +691,33 @@ public partial class ProjectViewModel : ObservableObject
 
         foreach (var (code, name) in items)
         {
-            var nodeName = $"{code}_{name}";
+            // Наследуем контекст от родителя
+            var nodeContext = new Dictionary<string, object>();
+            foreach (var ctx in parent.ContextAttributes)
+            {
+                nodeContext[ctx.Key] = ctx.Value;
+            }
+            
+            // Добавляем контекст текущего узла (используем SourceKey как ключ)
+            nodeContext[definition.SourceKey] = new Dictionary<string, object>
+            {
+                ["Code"] = code,
+                ["Name"] = name
+            };
+            
+            // Вычисляем имя по формуле
+            var formulaContext = BuildFormulaContext(nodeContext);
+            var nodeName = _namingEngine.ApplyFormula(formula, formulaContext);
+            if (string.IsNullOrEmpty(nodeName))
+                nodeName = $"{code}_{name}"; // Fallback
+            
             var node = new GeneratedNode
             {
                 NodeTypeId = definition.NodeTypeId,
                 Name = nodeName,
                 FullPath = Path.Combine(parent.FullPath, nodeName),
-                NameFormula = formula
-            };
-            
-            // Наследуем контекст от родителя
-            foreach (var ctx in parent.ContextAttributes)
-            {
-                node.ContextAttributes[ctx.Key] = ctx.Value;
-            }
-            
-            // Добавляем контекст текущего узла (используем SourceKey как ключ)
-            node.ContextAttributes[definition.SourceKey] = new Dictionary<string, object>
-            {
-                ["Code"] = code,
-                ["Name"] = name
+                NameFormula = formula,
+                ContextAttributes = nodeContext
             };
 
             parent.Children.Add(node);
@@ -687,6 +738,36 @@ public partial class ProjectViewModel : ObservableObject
                 GenerateNodesRecursive(childDef, parent, profile);
             }
         }
+    }
+    
+    /// <summary>
+    /// Преобразует контекст узла в плоский словарь для формул.
+    /// Например, {"Stages": {"Code": "П", "Name": "Проектная"}} -> {"Stages.Code": "П", "Stages.Name": "Проектная"}
+    /// </summary>
+    private Dictionary<string, string> BuildFormulaContext(Dictionary<string, object> nodeContext)
+    {
+        var result = new Dictionary<string, string>();
+        
+        foreach (var kvp in nodeContext)
+        {
+            if (kvp.Value is Dictionary<string, object> nested)
+            {
+                foreach (var innerKvp in nested)
+                {
+                    result[$"{kvp.Key}.{innerKvp.Key}"] = innerKvp.Value?.ToString() ?? "";
+                }
+            }
+            else if (kvp.Value is string strVal)
+            {
+                result[kvp.Key] = strVal;
+            }
+            else
+            {
+                result[kvp.Key] = kvp.Value?.ToString() ?? "";
+            }
+        }
+        
+        return result;
     }
 
 
@@ -961,14 +1042,18 @@ public partial class ProjectViewModel : ObservableObject
             return;
         }
 
-        if (!Directory.Exists(node.FullPath))
-        {
-            StatusMessage = $"Папка еще не создана: {node.FullPath}";
-            return;
-        }
-
         var viewModel = new AclViewerViewModel(_aclService);
-        viewModel.LoadAcl(node.FullPath);
+        
+        if (Directory.Exists(node.FullPath))
+        {
+            // Реальные ACL с диска
+            viewModel.LoadAcl(node.FullPath);
+        }
+        else
+        {
+            // Превью: ACL из overrides + формул профиля
+            viewModel.LoadPreview(node.FullPath, node.NodeAclOverrides, node.PlannedAcl);
+        }
 
         var dialog = new AclViewerDialog
         {
@@ -988,7 +1073,7 @@ public partial class ProjectViewModel : ObservableObject
         }
         
         var viewModel = new AclAssignViewModel(_securityPrincipalRepository);
-        viewModel.LoadNodeInfo(node.Name, node.FullPath, node.NodeAclOverrides);
+        viewModel.LoadNodeInfo(node.Name, node.FullPath, node.NodeAclOverrides, node.PlannedAcl);
         
         var dialog = new AclAssignDialog
         {
