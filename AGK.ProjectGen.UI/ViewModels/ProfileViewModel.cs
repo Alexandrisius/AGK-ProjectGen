@@ -26,6 +26,14 @@ public partial class ProfileViewModel : ObservableObject
     [ObservableProperty]
     private DictionaryItem? _selectedDictionaryItem;
 
+    [ObservableProperty]
+    private bool _isSaveSuccess;
+
+    [ObservableProperty]
+    private string _saveButtonText = "💾 Сохранить профиль";
+
+    private System.Timers.Timer? _saveStatusTimer;
+
     public ProfileViewModel(IProfileRepository repository)
     {
         _repository = repository;
@@ -161,7 +169,14 @@ public partial class ProfileViewModel : ObservableObject
         profile.NodeTypes.Add(new NodeTypeSchema { TypeId = "DisciplineFolder", DisplayName = "Папка раздела", DefaultFormula = "{ProjectCode}_{Buildings.Code}_{Disciplines.Code}" });
         profile.NodeTypes.Add(new NodeTypeSchema { TypeId = "SystemFolder", DisplayName = "Служебная папка", DefaultFormula = "{SystemFolders.Name}" });
         
-        // Структура: Позиции → Стадии → Разделы
+        // Структура: ProjectRoot → Позиции → Стадии → Разделы
+        var projectRootNode = new StructureNodeDefinition
+        {
+            NodeTypeId = "ProjectRoot",
+            Multiplicity = MultiplicitySource.Single,
+            IsRoot = true  // Защита от удаления
+        };
+        
         var buildingNode = new StructureNodeDefinition 
         { 
             NodeTypeId = "BuildingFolder", 
@@ -185,7 +200,8 @@ public partial class ProfileViewModel : ObservableObject
         
         stageNode.Children.Add(disciplineNode);
         buildingNode.Children.Add(stageNode);
-        profile.Structure.RootNodes.Add(buildingNode);
+        projectRootNode.Children.Add(buildingNode);
+        profile.Structure.RootNodes.Add(projectRootNode);
         
         return profile;
     }
@@ -207,6 +223,26 @@ public partial class ProfileViewModel : ObservableObject
         if (SelectedProfile != null)
         {
             await _repository.SaveAsync(SelectedProfile);
+            
+            // Показать временный статус успеха
+            IsSaveSuccess = true;
+            SaveButtonText = "✓ Сохранено!";
+            
+            // Сбросить статус через 2 секунды
+            _saveStatusTimer?.Stop();
+            _saveStatusTimer?.Dispose();
+            _saveStatusTimer = new System.Timers.Timer(2000);
+            _saveStatusTimer.Elapsed += (s, e) =>
+            {
+                System.Windows.Application.Current.Dispatcher.Invoke(() =>
+                {
+                    IsSaveSuccess = false;
+                    SaveButtonText = "💾 Сохранить профиль";
+                });
+                _saveStatusTimer?.Stop();
+            };
+            _saveStatusTimer.AutoReset = false;
+            _saveStatusTimer.Start();
         }
     }
 
@@ -343,6 +379,18 @@ public partial class ProfileViewModel : ObservableObject
     private void RemoveNode()
     {
         if (SelectedStructureNode == null || SelectedProfile == null) return;
+        
+        // Запрет удаления корневого узла
+        if (SelectedStructureNode.IsRoot)
+        {
+            System.Windows.MessageBox.Show(
+                "Корневой узел структуры не может быть удалён.",
+                "Удаление запрещено",
+                System.Windows.MessageBoxButton.OK,
+                System.Windows.MessageBoxImage.Warning);
+            return;
+        }
+        
         if (RemoveNodeRecursive(SelectedProfile.Structure.RootNodes, SelectedStructureNode))
         {
             SelectedStructureNode = null;

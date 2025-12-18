@@ -506,13 +506,8 @@ public partial class ProjectViewModel : ObservableObject
             return;
         }
 
-        // Проверяем что хотя бы в одной группе есть выбранные элементы
-        var hasSelection = DynamicSelectionGroups.Any(g => g.SelectedItems.Any());
-        if (!hasSelection)
-        {
-            StatusMessage = "Выберите хотя бы один элемент в списках!";
-            return;
-        }
+        // ПРИМЕЧАНИЕ: Пустые словари будут пропущены при генерации,
+        // но их дочерние узлы всё равно создадутся в родителе
 
         StatusMessage = "Генерация превью...";
         
@@ -680,6 +675,16 @@ public partial class ProjectViewModel : ObservableObject
             foreach (var childDef in definition.Children)
             {
                 GenerateNodesRecursive(childDef, node, profile);
+            }
+        }
+        
+        // Если словарь пуст (нет выбранных элементов), пропускаем этот уровень
+        // и генерируем дочерние узлы напрямую в родителе
+        if (items.Count == 0)
+        {
+            foreach (var childDef in definition.Children)
+            {
+                GenerateNodesRecursive(childDef, parent, profile);
             }
         }
     }

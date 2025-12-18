@@ -15,6 +15,11 @@ public class StructureNodeDefinition
     public string Id { get; set; } = Guid.NewGuid().ToString(); // Unique ID in schema
     public string NodeTypeId { get; set; } = string.Empty; // Ref to NodeTypeSchema
     
+    /// <summary>
+    /// Если true — узел является корнем структуры и не может быть удалён.
+    /// </summary>
+    public bool IsRoot { get; set; } = false;
+    
     // Multiplicity source
     public MultiplicitySource Multiplicity { get; set; } = MultiplicitySource.Single;
     public string? SourceKey { get; set; } // e.g. "Stages" (Dictionary) or "Buildings" (Table)

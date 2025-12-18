@@ -92,10 +92,19 @@
                     
                     <!-- Save Button -->
                     <Border DockPanel.Dock="Bottom" Margin="0,16,0,0">
-                        <Button Content="💾  Сохранить профиль" 
-                                Style="{StaticResource PrimaryButtonStyle}"
+                        <Button Content="{Binding SaveButtonText}" 
                                 Command="{Binding SaveProfileCommand}" 
-                                HorizontalAlignment="Left"/>
+                                HorizontalAlignment="Left">
+                            <Button.Style>
+                                <Style TargetType="Button" BasedOn="{StaticResource PrimaryButtonStyle}">
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsSaveSuccess}" Value="True">
+                                            <Setter Property="Background" Value="{StaticResource AccentBrush}"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Button.Style>
+                        </Button>
                     </Border>
                     
                     <!-- Tabs -->
@@ -402,7 +411,18 @@
                                             <TreeView.ItemTemplate>
                                                 <HierarchicalDataTemplate ItemsSource="{Binding Children}">
                                                     <StackPanel Orientation="Horizontal" Margin="4">
-                                                        <TextBlock Text="📂" Margin="0,0,8,0" FontSize="14"/>
+                                                        <TextBlock Margin="0,0,8,0" FontSize="14">
+                                                            <TextBlock.Style>
+                                                                <Style TargetType="TextBlock">
+                                                                    <Setter Property="Text" Value="📂"/>
+                                                                    <Style.Triggers>
+                                                                        <DataTrigger Binding="{Binding IsRoot}" Value="True">
+                                                                            <Setter Property="Text" Value="🏠"/>
+                                                                        </DataTrigger>
+                                                                    </Style.Triggers>
+                                                                </Style>
+                                                            </TextBlock.Style>
+                                                        </TextBlock>
                                                         <TextBlock Text="{Binding NodeTypeId}" FontWeight="Bold"/>
                                                         <TextBlock Text=" → " Foreground="{StaticResource TextSecondaryBrush}"/>
                                                         <TextBlock Text="{Binding SourceKey}" Foreground="{StaticResource PrimaryBrush}"/>

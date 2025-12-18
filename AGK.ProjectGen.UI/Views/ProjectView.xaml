@@ -128,7 +128,7 @@
         <TabControl Grid.Row="1" Background="Transparent" BorderThickness="0" Padding="0">
             
             <!-- ========== TAB 1: Атрибуты ========== -->
-            <TabItem Header="1️⃣  Атрибуты проекта" Style="{StaticResource WizardTabItemStyle}">
+            <TabItem Header="① Атрибуты проекта" Style="{StaticResource WizardTabItemStyle}">
                 <Border Style="{StaticResource CardStyle}" Margin="0,0,0,0">
                     <ScrollViewer VerticalScrollBarVisibility="Auto">
                         <StackPanel>
@@ -182,7 +182,7 @@
             </TabItem>
             
             <!-- ========== TAB 2: Состав ========== -->
-            <TabItem Header="2️⃣  Состав проекта" Style="{StaticResource WizardTabItemStyle}">
+            <TabItem Header="② Состав проекта" Style="{StaticResource WizardTabItemStyle}">
                 <Border Style="{StaticResource CardStyle}" Margin="0,0,0,0">
                     <ScrollViewer VerticalScrollBarVisibility="Auto">
                         <StackPanel>
@@ -263,9 +263,9 @@
                                                           Background="White"
                                                           GridLinesVisibility="Horizontal"
                                                           HorizontalGridLinesBrush="{StaticResource BorderBrush}"
-                                                          MinHeight="80"
-                                                          MaxHeight="200"
-                                                          RowHeight="32">
+                                                          MinHeight="60"
+                                                          MaxHeight="120"
+                                                          RowHeight="28">
                                                     <DataGrid.Columns>
                                                         <DataGridTextColumn Header="Код / №" Binding="{Binding Code}" Width="100"/>
                                                         <DataGridTextColumn Header="Наименование" Binding="{Binding Name}" Width="*"/>
@@ -282,7 +282,7 @@
             </TabItem>
             
             <!-- ========== TAB 3: Превью ========== -->
-            <TabItem Header="3️⃣  Превью и создание" Style="{StaticResource WizardTabItemStyle}">
+            <TabItem Header="③ Превью и создание" Style="{StaticResource WizardTabItemStyle}">
                 <Border Style="{StaticResource CardStyle}" Margin="0,0,0,0">
                     <DockPanel>
                         <DockPanel DockPanel.Dock="Top" Margin="0,0,0,16">
