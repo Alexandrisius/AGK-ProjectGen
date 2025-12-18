@@ -109,6 +109,39 @@ public partial class AttributeValueItem : ObservableObject
     private string _value = string.Empty;
     
     /// <summary>
+    /// Булевое значение для Boolean типа атрибута.
+    /// </summary>
+    public bool BoolValue
+    {
+        get => string.Equals(Value, "true", StringComparison.OrdinalIgnoreCase) || Value == "1";
+        set
+        {
+            Value = value ? "true" : "false";
+            OnPropertyChanged();
+        }
+    }
+    
+    /// <summary>
+    /// Значение даты для Date типа атрибута.
+    /// </summary>
+    public DateTime? DateValue
+    {
+        get => DateTime.TryParse(Value, out var dt) ? dt : null;
+        set
+        {
+            Value = value?.ToString("yyyy-MM-dd") ?? string.Empty;
+            OnPropertyChanged();
+        }
+    }
+    
+    partial void OnValueChanged(string value)
+    {
+        // Уведомить об изменении производных свойств
+        OnPropertyChanged(nameof(BoolValue));
+        OnPropertyChanged(nameof(DateValue));
+    }
+    
+    /// <summary>
     /// Подсказка/описание.
     /// </summary>
     [ObservableProperty]

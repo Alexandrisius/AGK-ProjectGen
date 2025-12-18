@@ -149,9 +149,83 @@
                                                 <TextBlock Text=" *" Foreground="{StaticResource ErrorBrush}" 
                                                            Visibility="{Binding IsRequired, Converter={StaticResource BoolToVisibilityConverter}}"/>
                                             </StackPanel>
+                                            
+                                            <!-- String / Integer: TextBox -->
                                             <TextBox Text="{Binding Value, UpdateSourceTrigger=PropertyChanged}"
-                                                     Style="{StaticResource ModernTextBoxStyle}"
-                                                     ToolTip="{Binding Description}"/>
+                                                     ToolTip="{Binding Description}">
+                                                <TextBox.Style>
+                                                    <Style TargetType="TextBox" BasedOn="{StaticResource ModernTextBoxStyle}">
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding AttributeType}" Value="Boolean">
+                                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                                            </DataTrigger>
+                                                            <DataTrigger Binding="{Binding AttributeType}" Value="Date">
+                                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                                            </DataTrigger>
+                                                            <DataTrigger Binding="{Binding AttributeType}" Value="Select">
+                                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </TextBox.Style>
+                                            </TextBox>
+                                            
+                                            <!-- Boolean: CheckBox -->
+                                            <CheckBox IsChecked="{Binding BoolValue, Mode=TwoWay}"
+                                                      Content="Да" 
+                                                      ToolTip="{Binding Description}"
+                                                      VerticalContentAlignment="Center"
+                                                      Margin="0,6,0,0">
+                                                <CheckBox.Style>
+                                                    <Style TargetType="CheckBox">
+                                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                                        <Setter Property="FontSize" Value="14"/>
+                                                        <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}"/>
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding AttributeType}" Value="Boolean">
+                                                                <Setter Property="Visibility" Value="Visible"/>
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </CheckBox.Style>
+                                            </CheckBox>
+                                            
+                                            <!-- Date: DatePicker -->
+                                            <DatePicker SelectedDate="{Binding DateValue, Mode=TwoWay}"
+                                                        ToolTip="{Binding Description}">
+                                                <DatePicker.Style>
+                                                    <Style TargetType="DatePicker">
+                                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                                        <Setter Property="FontSize" Value="14"/>
+                                                        <Setter Property="Background" Value="{StaticResource BgSecondaryBrush}"/>
+                                                        <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}"/>
+                                                        <Setter Property="Padding" Value="10,8"/>
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding AttributeType}" Value="Date">
+                                                                <Setter Property="Visibility" Value="Visible"/>
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </DatePicker.Style>
+                                            </DatePicker>
+                                            
+                                            <!-- Select: ComboBox -->
+                                            <ComboBox ItemsSource="{Binding SelectItems}"
+                                                      SelectedValue="{Binding Value}"
+                                                      SelectedValuePath="Code"
+                                                      DisplayMemberPath="DisplayText"
+                                                      ToolTip="{Binding Description}">
+                                                <ComboBox.Style>
+                                                    <Style TargetType="ComboBox" BasedOn="{StaticResource ModernComboBoxStyle}">
+                                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding AttributeType}" Value="Select">
+                                                                <Setter Property="Visibility" Value="Visible"/>
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </ComboBox.Style>
+                                            </ComboBox>
                                         </StackPanel>
                                     </DataTemplate>
                                 </ItemsControl.ItemTemplate>
