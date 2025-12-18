@@ -10,11 +10,11 @@ none
 false
 TRACE;DEBUG;NET;NET8_0;NETCOREAPP;WINDOWS;WINDOWS7_0;NET5_0_OR_GREATER;NET6_0_OR_GREATER;NET7_0_OR_GREATER;NET8_0_OR_GREATER;NETCOREAPP3_0_OR_GREATER;NETCOREAPP3_1_OR_GREATER;WINDOWS7_0_OR_GREATER
 C:\Users\klim9\Yandex.Disk\02_Work\#Projects\02_dotNet\01-Рабочая\AGK-ProjectGen\AGK.ProjectGen.UI\App.xaml
-8-956469310
+10-2055634432
 
-231573888566
-205656018896
-MainWindow.xaml;Resources\Languages\Ru-ru.xaml;Resources\Styles.xaml;Views\AclViewerDialog.xaml;Views\DeleteConfirmationDialog.xaml;Views\ProfileView.xaml;Views\ProjectsListView.xaml;Views\ProjectView.xaml;
+311131544747
+20528200657
+MainWindow.xaml;Resources\Languages\Ru-ru.xaml;Resources\Styles.xaml;Views\AclAssignDialog.xaml;Views\AclRuleEditorDialog.xaml;Views\AclViewerDialog.xaml;Views\DeleteConfirmationDialog.xaml;Views\ProfileView.xaml;Views\ProjectsListView.xaml;Views\ProjectView.xaml;
 
 False
 

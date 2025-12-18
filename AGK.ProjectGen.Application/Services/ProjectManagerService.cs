@@ -35,10 +35,32 @@ public class ProjectManagerService : IProjectManagerService
         return _generationService.GenerateStructurePreview(project, profile);
     }
 
+    public List<GeneratedNode> GetDiffPlan(GeneratedNode previewStructure, string rootPath, ProfileSchema profile)
+    {
+        return _projectUpdater.CreateDiffPlan(previewStructure, rootPath, profile);
+    }
+    
+    public List<DeleteFolderInfo> GetFoldersWithFilesToDelete(List<GeneratedNode> diffPlan)
+    {
+        return _projectUpdater.GetFoldersWithFilesToDelete(diffPlan);
+    }
+    
+    public async Task ExecuteProjectPlanAsync(Project project, ProfileSchema profile, List<GeneratedNode> diffPlan)
+    {
+        // 1. Execute Plan (Create/Delete folders, set ACLs)
+        await _projectUpdater.ExecutePlanAsync(diffPlan, project, profile);
+
+        // 2. Update Project State
+        project.State.LastGenerated = DateTime.Now;
+        project.State.IsDirty = false;
+
+        // 3. Persist Project Metadata
+        await _projectRepository.SaveAsync(project);
+    }
+
     public async Task CreateProjectAsync(Project project, ProfileSchema profile, GeneratedNode previewStructure)
     {
         // 1. Calculate Diff Plan (Execution Plan)
-        // Even for new projects, we check target directory to see if files exist
         var diffPlan = _projectUpdater.CreateDiffPlan(previewStructure, project.RootPath, profile);
 
         // 2. Execute Plan (Create folders, set ACLs)

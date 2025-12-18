@@ -1,3 +1,4 @@
+using AGK.ProjectGen.Domain.AccessControl;
 using AGK.ProjectGen.Domain.Enums;
 using System.Collections.ObjectModel;
 
@@ -26,4 +27,10 @@ public class StructureNodeDefinition
     
     // Conditions (e.g. Generate only if Project.HasGarage == true)
     public string? ConditionExpression { get; set; }
+    
+    /// <summary>
+    /// Правила ACL для данного узла структуры.
+    /// Применяются при создании папок на основе условий из контекста.
+    /// </summary>
+    public ObservableCollection<AclRuleDefinition> AclRules { get; set; } = new();
 }

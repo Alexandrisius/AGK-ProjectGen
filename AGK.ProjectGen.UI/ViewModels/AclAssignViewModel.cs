@@ -1,0 +1,130 @@
+using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
+using System.Collections.ObjectModel;
+using AGK.ProjectGen.Application.Interfaces;
+using AGK.ProjectGen.Domain.AccessControl;
+using AGK.ProjectGen.Domain.Enums;
+
+namespace AGK.ProjectGen.UI.ViewModels;
+
+public partial class AclAssignViewModel : ObservableObject
+{
+    private readonly ISecurityPrincipalRepository _principalRepository;
+    
+    [ObservableProperty]
+    private ObservableCollection<SecurityPrincipal> _availablePrincipals = new();
+    
+    [ObservableProperty]
+    private ObservableCollection<AclRule> _assignedRules = new();
+    
+    [ObservableProperty]
+    private AclRule? _selectedAssignedRule;
+    
+    [ObservableProperty]
+    private SecurityPrincipal? _selectedPrincipal;
+    
+    [ObservableProperty]
+    private string _customPrincipalName = string.Empty;
+    
+    [ObservableProperty]
+    private bool _hasRead;
+    
+    [ObservableProperty]
+    private bool _hasWrite;
+    
+    [ObservableProperty]
+    private bool _hasModify;
+    
+    [ObservableProperty]
+    private bool _hasFullControl;
+    
+    [ObservableProperty]
+    private bool _isDeny;
+    
+    [ObservableProperty]
+    private bool _applyToChildren;
+    
+    [ObservableProperty]
+    private string _nodePath = string.Empty;
+    
+    [ObservableProperty]
+    private string _nodeName = string.Empty;
+    
+    public bool DialogResult { get; private set; }
+    
+    public AclAssignViewModel(ISecurityPrincipalRepository principalRepository)
+    {
+        _principalRepository = principalRepository;
+        _ = LoadPrincipalsAsync();
+    }
+    
+    public void LoadNodeInfo(string nodeName, string nodePath, List<AclRule> existingRules)
+    {
+        NodeName = nodeName;
+        NodePath = nodePath;
+        AssignedRules = new ObservableCollection<AclRule>(existingRules);
+    }
+    
+    public List<AclRule> GetAssignedRules() => AssignedRules.ToList();
+    
+    private async Task LoadPrincipalsAsync()
+    {
+        var principals = await _principalRepository.GetAllPrincipalsAsync();
+        AvailablePrincipals = new ObservableCollection<SecurityPrincipal>(principals);
+    }
+    
+    [RelayCommand]
+    private void AddRule()
+    {
+        var identity = SelectedPrincipal?.FullName ?? CustomPrincipalName;
+        if (string.IsNullOrWhiteSpace(identity)) return;
+        
+        ProjectAccessRights rights = ProjectAccessRights.None;
+        if (HasRead) rights |= ProjectAccessRights.Read;
+        if (HasWrite) rights |= ProjectAccessRights.Write;
+        if (HasModify) rights |= ProjectAccessRights.Modify;
+        if (HasFullControl) rights = ProjectAccessRights.FullControl;
+        
+        if (rights == ProjectAccessRights.None) rights = ProjectAccessRights.Read;
+        
+        var rule = new AclRule
+        {
+            Identity = identity,
+            Rights = rights,
+            IsDeny = IsDeny,
+            Competence = SelectedPrincipal?.Description ?? string.Empty
+        };
+        
+        AssignedRules.Add(rule);
+        
+        // Reset form
+        CustomPrincipalName = string.Empty;
+        HasRead = false;
+        HasWrite = false;
+        HasModify = false;
+        HasFullControl = false;
+        IsDeny = false;
+    }
+    
+    [RelayCommand]
+    private void RemoveRule()
+    {
+        if (SelectedAssignedRule != null)
+        {
+            AssignedRules.Remove(SelectedAssignedRule);
+            SelectedAssignedRule = null;
+        }
+    }
+    
+    [RelayCommand]
+    public void Confirm()
+    {
+        DialogResult = true;
+    }
+    
+    [RelayCommand]
+    public void Cancel()
+    {
+        DialogResult = false;
+    }
+}

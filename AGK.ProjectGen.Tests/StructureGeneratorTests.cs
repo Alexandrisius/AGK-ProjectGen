@@ -258,7 +258,7 @@ public class StructureGeneratorTests
                 new()
                 {
                     Key = "Stages",
-                    Items = new List<DictionaryItem>
+                    Items = new ObservableCollection<DictionaryItem>
                     {
                         new() { Code = "П", Name = "Проектирование" },
                         new() { Code = "Р", Name = "Рабочая" },
@@ -296,7 +296,7 @@ public class StructureGeneratorTests
                 new()
                 {
                     Key = "Stages",
-                    Items = new List<DictionaryItem>
+                    Items = new ObservableCollection<DictionaryItem>
                     {
                         new() { Code = "П", Name = "Проектирование" },
                         new() { Code = "Р", Name = "Рабочая" }
@@ -305,7 +305,7 @@ public class StructureGeneratorTests
                 new()
                 {
                     Key = "Disciplines",
-                    Items = new List<DictionaryItem>
+                    Items = new ObservableCollection<DictionaryItem>
                     {
                         new() { Code = "АР", Name = "Архитектура" },
                         new() { Code = "КР", Name = "Конструкции" }
@@ -352,7 +352,7 @@ public class StructureGeneratorTests
                 new()
                 {
                     Key = "Stages",
-                    Items = new List<DictionaryItem>
+                    Items = new ObservableCollection<DictionaryItem>
                     {
                         new() { Code = "П", Name = "Проектирование" },
                         new() { Code = "Р", Name = "Рабочая" }
@@ -361,7 +361,7 @@ public class StructureGeneratorTests
                 new()
                 {
                     Key = "Disciplines",
-                    Items = new List<DictionaryItem>
+                    Items = new ObservableCollection<DictionaryItem>
                     {
                         new() { Code = "АР", Name = "Архитектура" },
                         new() { Code = "КР", Name = "Конструкции" },

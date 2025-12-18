@@ -54,6 +54,10 @@
                         Visibility="{Binding Operation, Converter={StaticResource NodeOperationDeleteToVisibilityConverter}}">
                     <TextBlock Text="DELETE" FontSize="10" FontWeight="Bold" Foreground="White"/>
                 </Border>
+                <!-- ACL иконка -->
+                <TextBlock Text="🔐" FontSize="12" Margin="8,0,0,0" VerticalAlignment="Center"
+                           Visibility="{Binding HasAclRules, Converter={StaticResource BoolToVisibilityConverter}}"
+                           ToolTip="Назначены права доступа"/>
             </StackPanel>
         </HierarchicalDataTemplate>
         
@@ -297,23 +301,28 @@
                         <Border Background="{StaticResource BgSecondaryBrush}" 
                                 CornerRadius="8" Padding="12"
                                 BorderBrush="{StaticResource BorderBrush}" BorderThickness="1">
-                            <TreeView ItemsSource="{Binding PreviewStructure}" 
+                            <TreeView x:Name="PreviewTreeView"
+                                      ItemsSource="{Binding PreviewStructure}" 
+                                      SelectedItemChanged="PreviewTreeView_SelectedItemChanged"
                                       Background="Transparent" BorderThickness="0" MinHeight="300">
                                 <TreeView.ContextMenu>
                                     <ContextMenu>
                                         <MenuItem Header="📂 Открыть в проводнике" 
-                                                  Command="{Binding DataContext.OpenNodeInExplorerCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                                  CommandParameter="{Binding PlacementTarget.SelectedItem, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
+                                                  Command="{Binding PlacementTarget.DataContext.OpenNodeInExplorerCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                                  CommandParameter="{Binding PlacementTarget.DataContext.SelectedNode, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
                                         <MenuItem Header="📋 Копировать путь" 
-                                                  Command="{Binding DataContext.CopyPathCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                                  CommandParameter="{Binding PlacementTarget.SelectedItem, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
+                                                  Command="{Binding PlacementTarget.DataContext.CopyPathCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                                  CommandParameter="{Binding PlacementTarget.DataContext.SelectedNode, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
                                         <Separator/>
                                         <MenuItem Header="🔐 Просмотр ACL" 
-                                                  Command="{Binding DataContext.ViewAclCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                                  CommandParameter="{Binding PlacementTarget.SelectedItem, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
+                                                  Command="{Binding PlacementTarget.DataContext.ViewAclCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                                  CommandParameter="{Binding PlacementTarget.DataContext.SelectedNode, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
+                                        <MenuItem Header="🔒 Назначить права доступа..." 
+                                                  Command="{Binding PlacementTarget.DataContext.AssignAclCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                                  CommandParameter="{Binding PlacementTarget.DataContext.SelectedNode, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
                                         <Separator/>
                                         <MenuItem Header="🔄 Пересчитать имена" 
-                                                  Command="{Binding DataContext.RecalculateNamesCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"/>
+                                                  Command="{Binding PlacementTarget.DataContext.RecalculateNamesCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
                                     </ContextMenu>
                                 </TreeView.ContextMenu>
                             </TreeView>

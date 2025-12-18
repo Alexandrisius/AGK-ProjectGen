@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("AGK.ProjectGen.UI")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+0ed5761cc4079b717a3f383b090a145125528baf")]
 [assembly: System.Reflection.AssemblyProductAttribute("AGK.ProjectGen.UI")]
 [assembly: System.Reflection.AssemblyTitleAttribute("AGK.ProjectGen.UI")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

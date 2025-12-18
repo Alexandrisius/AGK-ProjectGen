@@ -5,6 +5,7 @@ C:\Users\klim9\Yandex.Disk\02_Work\#Projects\02_dotNet\01-Рабочая\AGK-Pro
 C:\Users\klim9\Yandex.Disk\02_Work\#Projects\02_dotNet\01-Рабочая\AGK-ProjectGen\AGK.ProjectGen.Domain\obj\Debug\net8.0\AGK.ProjectGen.Domain.AssemblyInfoInputs.cache
 C:\Users\klim9\Yandex.Disk\02_Work\#Projects\02_dotNet\01-Рабочая\AGK-ProjectGen\AGK.ProjectGen.Domain\obj\Debug\net8.0\AGK.ProjectGen.Domain.AssemblyInfo.cs
 C:\Users\klim9\Yandex.Disk\02_Work\#Projects\02_dotNet\01-Рабочая\AGK-ProjectGen\AGK.ProjectGen.Domain\obj\Debug\net8.0\AGK.ProjectGen.Domain.csproj.CoreCompileInputs.cache
+C:\Users\klim9\Yandex.Disk\02_Work\#Projects\02_dotNet\01-Рабочая\AGK-ProjectGen\AGK.ProjectGen.Domain\obj\Debug\net8.0\AGK.ProjectGen.Domain.sourcelink.json
 C:\Users\klim9\Yandex.Disk\02_Work\#Projects\02_dotNet\01-Рабочая\AGK-ProjectGen\AGK.ProjectGen.Domain\obj\Debug\net8.0\AGK.ProjectGen.Domain.dll
 C:\Users\klim9\Yandex.Disk\02_Work\#Projects\02_dotNet\01-Рабочая\AGK-ProjectGen\AGK.ProjectGen.Domain\obj\Debug\net8.0\refint\AGK.ProjectGen.Domain.dll
 C:\Users\klim9\Yandex.Disk\02_Work\#Projects\02_dotNet\01-Рабочая\AGK-ProjectGen\AGK.ProjectGen.Domain\obj\Debug\net8.0\AGK.ProjectGen.Domain.pdb

@@ -446,7 +446,14 @@
                                             
                                             <TextBlock Text="Формула имени (override)" Style="{StaticResource LabelStyle}" Margin="0,0,0,6"/>
                                             <TextBox Text="{Binding SelectedStructureNode.NamingFormulaOverride}" 
-                                                     Style="{StaticResource ModernTextBoxStyle}"/>
+                                                     Style="{StaticResource ModernTextBoxStyle}" Margin="0,0,0,16"/>
+                                            
+                                            <!-- ACL Button -->
+                                            <Button Content="🔐 Настроить ACL" 
+                                                    Style="{StaticResource SecondaryButtonStyle}"
+                                                    Command="{Binding ConfigureAclCommand}" 
+                                                    Padding="12,8"
+                                                    ToolTip="Настроить правила доступа для данного узла структуры"/>
                                         </StackPanel>
                                     </Border>
                                 </Grid>

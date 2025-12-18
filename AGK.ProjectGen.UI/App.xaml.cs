@@ -1,9 +1,11 @@
-﻿using System.Windows;
+using System.Windows;
 using Microsoft.Extensions.DependencyInjection;
 using AGK.ProjectGen.Application.Interfaces;
 using AGK.ProjectGen.Application.Services;
 using AGK.ProjectGen.Infrastructure.Services;
+using AGK.ProjectGen.Infrastructure.Repositories;
 using AGK.ProjectGen.UI.ViewModels;
+using AGK.ProjectGen.UI.Services;
 
 namespace AGK.ProjectGen.UI;
 
@@ -32,6 +34,11 @@ public partial class App : System.Windows.Application
         services.AddSingleton<IGenerationService, StructureGenerator>();
         services.AddSingleton<IProjectUpdater, ProjectUpdater>();
         services.AddSingleton<IProjectManagerService, ProjectManagerService>();
+        services.AddSingleton<IAclFormulaEngine, AclFormulaEngine>();
+        services.AddSingleton<ISecurityPrincipalRepository, SecurityPrincipalRepository>();
+        
+        // UI Services
+        services.AddSingleton<IDialogService, DialogService>();
 
         // ViewModels
         services.AddSingleton<MainViewModel>();

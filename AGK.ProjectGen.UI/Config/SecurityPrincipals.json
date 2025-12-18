@@ -1,0 +1,53 @@
+{
+  "groups": [
+    {
+      "name": "Администраторы",
+      "domain": null,
+      "description": "Группа администраторов",
+      "type": "Group"
+    },
+    {
+      "name": "ГИПы",
+      "domain": null,
+      "description": "Главные инженеры проектов",
+      "type": "Group"
+    },
+    {
+      "name": "Группа_АР",
+      "domain": null,
+      "description": "Раздел Архитектурные решения",
+      "type": "Group"
+    },
+    {
+      "name": "Группа_КР",
+      "domain": null,
+      "description": "Раздел Конструктивные решения",
+      "type": "Group"
+    },
+    {
+      "name": "Группа_ОВ",
+      "domain": null,
+      "description": "Раздел Отопление и вентиляция",
+      "type": "Group"
+    },
+    {
+      "name": "Группа_ВК",
+      "domain": null,
+      "description": "Раздел Водоснабжение и канализация",
+      "type": "Group"
+    },
+    {
+      "name": "Группа_ЭО",
+      "domain": null,
+      "description": "Раздел Электрооборудование",
+      "type": "Group"
+    },
+    {
+      "name": "Все",
+      "domain": null,
+      "description": "Все пользователи",
+      "type": "Group"
+    }
+  ],
+  "users": []
+}

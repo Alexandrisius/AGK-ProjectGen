@@ -4,6 +4,7 @@ using System.IO;
 using AGK.ProjectGen.Application.Interfaces;
 using AGK.ProjectGen.Domain.Entities;
 using AGK.ProjectGen.Domain.Schema;
+using AGK.ProjectGen.Domain.AccessControl;
 using CommunityToolkit.Mvvm.Input;
 using System.Diagnostics;
 using System.Windows;
@@ -17,6 +18,8 @@ public partial class ProjectViewModel : ObservableObject
     private readonly IProjectManagerService _projectManagerService;
     private readonly INamingEngine _namingEngine;
     private readonly IAclService _aclService;
+    private readonly IDialogService _dialogService;
+    private readonly ISecurityPrincipalRepository _securityPrincipalRepository;
 
     #region Основные свойства
 
@@ -122,12 +125,16 @@ public partial class ProjectViewModel : ObservableObject
         IProfileRepository profileRepository, 
         IProjectManagerService projectManagerService,
         INamingEngine namingEngine,
-        IAclService aclService)
+        IAclService aclService,
+        IDialogService dialogService,
+        ISecurityPrincipalRepository securityPrincipalRepository)
     {
         _profileRepository = profileRepository;
         _projectManagerService = projectManagerService;
         _namingEngine = namingEngine;
         _aclService = aclService;
+        _dialogService = dialogService;
+        _securityPrincipalRepository = securityPrincipalRepository;
 
         LoadProfilesCommand.Execute(null);
     }
@@ -258,7 +265,18 @@ public partial class ProjectViewModel : ObservableObject
         if (node.Operation != NodeOperation.Delete)
         {
             node.Exists = exists;
-            node.Operation = exists ? NodeOperation.None : NodeOperation.Create;
+            
+            // Определяем операцию на основе IsIncluded и существования папки
+            if (!node.IsIncluded)
+            {
+                // Папка исключена пользователем (снята галочка)
+                node.Operation = exists ? NodeOperation.Delete : NodeOperation.None;
+            }
+            else
+            {
+                // Папка включена
+                node.Operation = exists ? NodeOperation.None : NodeOperation.Create;
+            }
         }
 
         // Если папка существует, проверяем её содержимое на наличие удаляемых подпапок
@@ -683,7 +701,7 @@ public partial class ProjectViewModel : ObservableObject
     {
         if (!IsPreviewGenerated || PreviewStructure.Count == 0 || SelectedProfile == null) return;
 
-        StatusMessage = IsEditMode ? "Обновление проекта..." : "Создание проекта...";
+        StatusMessage = IsEditMode ? "Подготовка к обновлению проекта..." : "Создание проекта...";
         try
         {
             var rootNode = PreviewStructure[0];
@@ -724,10 +742,34 @@ public partial class ProjectViewModel : ObservableObject
                 project.TableData[table.Key] = rows;
             }
             
-            // Сохраняем структуру дерева для восстановления при редактировании
-            project.SavedStructure = rootNode;
+            // 1. Получаем план изменений (diff)
+            var diffPlan = _projectManagerService.GetDiffPlan(rootNode, project.RootPath, SelectedProfile);
             
-            await _projectManagerService.CreateProjectAsync(project, SelectedProfile, rootNode);
+            // 2. Проверяем, есть ли папки с файлами на удаление
+            var foldersWithFiles = _projectManagerService.GetFoldersWithFilesToDelete(diffPlan);
+            
+            if (foldersWithFiles.Count > 0)
+            {
+                StatusMessage = "Обнаружены папки с файлами. Ожидание подтверждения...";
+                
+                // 3. Показываем диалог подтверждения
+                var confirmed = await _dialogService.ShowDeleteConfirmationAsync(foldersWithFiles);
+                
+                if (!confirmed)
+                {
+                    StatusMessage = "Операция отменена пользователем.";
+                    return;
+                }
+            }
+            
+            StatusMessage = IsEditMode ? "Обновление проекта..." : "Создание проекта...";
+            
+            // 4. Выполняем план изменений
+            await _projectManagerService.ExecuteProjectPlanAsync(project, SelectedProfile, diffPlan);
+            
+            // 5. Сохраняем структуру дерева для восстановления при редактировании
+            // Фильтруем удалённые узлы из сохранённой структуры
+            project.SavedStructure = CloneStructureWithoutDeleted(rootNode);
 
             StatusMessage = IsEditMode 
                 ? "Проект успешно обновлён!" 
@@ -737,6 +779,37 @@ public partial class ProjectViewModel : ObservableObject
         {
             StatusMessage = $"Ошибка: {ex.Message}";
         }
+    }
+    
+    /// <summary>
+    /// Создаёт копию структуры без удалённых узлов (IsIncluded = false или Operation = Delete).
+    /// </summary>
+    private GeneratedNode CloneStructureWithoutDeleted(GeneratedNode source)
+    {
+        var clone = new GeneratedNode
+        {
+            NodeTypeId = source.NodeTypeId,
+            Name = source.Name,
+            FullPath = source.FullPath,
+            NameFormula = source.NameFormula,
+            ContextAttributes = new Dictionary<string, object>(source.ContextAttributes),
+            Exists = source.IsIncluded, // После выполнения плана папка существует только если IsIncluded
+            Operation = NodeOperation.None,
+            IsIncluded = true // Все сохранённые узлы включены
+        };
+        
+        foreach (var child in source.Children)
+        {
+            // Пропускаем удалённые узлы
+            if (!child.IsIncluded || child.Operation == NodeOperation.Delete)
+            {
+                continue;
+            }
+            
+            clone.Children.Add(CloneStructureWithoutDeleted(child));
+        }
+        
+        return clone;
     }
 
     [RelayCommand]
@@ -898,5 +971,63 @@ public partial class ProjectViewModel : ObservableObject
             Owner = System.Windows.Application.Current.MainWindow
         };
         dialog.ShowDialog();
+    }
+    
+    [RelayCommand]
+    private void AssignAcl(GeneratedNode? node)
+    {
+        if (node == null)
+        {
+            StatusMessage = "Выберите узел для назначения прав доступа";
+            return;
+        }
+        
+        var viewModel = new AclAssignViewModel(_securityPrincipalRepository);
+        viewModel.LoadNodeInfo(node.Name, node.FullPath, node.NodeAclOverrides);
+        
+        var dialog = new AclAssignDialog
+        {
+            DataContext = viewModel,
+            Owner = System.Windows.Application.Current.MainWindow
+        };
+        
+        if (dialog.ShowDialog() == true && dialog.DialogResultOk)
+        {
+            // Обновляем overrides для узла
+            node.NodeAclOverrides.Clear();
+            foreach (var rule in viewModel.GetAssignedRules())
+            {
+                node.NodeAclOverrides.Add(rule);
+            }
+            
+            // Если выбрано "применить к дочерним", копируем правила
+            if (viewModel.ApplyToChildren)
+            {
+                ApplyAclToChildren(node, viewModel.GetAssignedRules());
+            }
+            
+            // Обновляем UI
+            OnPropertyChanged(nameof(PreviewStructure));
+            StatusMessage = $"Права доступа назначены для '{node.Name}'";
+        }
+    }
+    
+    private void ApplyAclToChildren(GeneratedNode parent, List<AclRule> rules)
+    {
+        foreach (var child in parent.Children)
+        {
+            child.NodeAclOverrides.Clear();
+            foreach (var rule in rules)
+            {
+                child.NodeAclOverrides.Add(new AclRule
+                {
+                    Identity = rule.Identity,
+                    Rights = rule.Rights,
+                    IsDeny = rule.IsDeny,
+                    Competence = rule.Competence
+                });
+            }
+            ApplyAclToChildren(child, rules);
+        }
     }
 }

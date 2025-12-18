@@ -1,0 +1,118 @@
+<Window x:Class="AGK.ProjectGen.UI.Views.AclAssignDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="🔐 Назначить права доступа" Height="550" Width="600"
+        WindowStartupLocation="CenterOwner"
+        Background="{StaticResource BgPrimaryBrush}">
+    
+    <Grid Margin="16">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        
+        <!-- Header -->
+        <StackPanel Grid.Row="0" Margin="0,0,0,16">
+            <TextBlock Text="Назначение прав доступа" Style="{StaticResource H2Style}"/>
+            <TextBlock Style="{StaticResource LabelStyle}" Margin="0,4,0,0">
+                <Run Text="Папка: "/>
+                <Run Text="{Binding NodeName}" FontWeight="SemiBold"/>
+            </TextBlock>
+        </StackPanel>
+        
+        <!-- Assigned Rules List -->
+        <Border Grid.Row="1" Background="{StaticResource BgSecondaryBrush}" CornerRadius="8" Padding="12" Margin="0,0,0,16">
+            <DockPanel>
+                <TextBlock DockPanel.Dock="Top" Text="Назначенные права:" Style="{StaticResource H3Style}" Margin="0,0,0,8"/>
+                
+                <DataGrid ItemsSource="{Binding AssignedRules}" 
+                          SelectedItem="{Binding SelectedAssignedRule}"
+                          AutoGenerateColumns="False"
+                          CanUserAddRows="False"
+                          Background="White"
+                          GridLinesVisibility="Horizontal"
+                          RowHeight="36"
+                          MinHeight="100">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="Субъект" Binding="{Binding Identity}" Width="*"/>
+                        <DataGridTextColumn Header="Права" Binding="{Binding Rights}" Width="100"/>
+                        <DataGridCheckBoxColumn Header="Запрет" Binding="{Binding IsDeny}" Width="60"/>
+                    </DataGrid.Columns>
+                </DataGrid>
+            </DockPanel>
+        </Border>
+        
+        <!-- Add Rule Form -->
+        <Border Grid.Row="2" Background="{StaticResource BgSecondaryBrush}" CornerRadius="8" Padding="16" Margin="0,0,0,16">
+            <StackPanel>
+                <TextBlock Text="Добавить правило" Style="{StaticResource H3Style}" Margin="0,0,0,12"/>
+                
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+                    
+                    <!-- Principal Selection -->
+                    <StackPanel Grid.Row="0" Grid.Column="0" Margin="0,0,8,8">
+                        <TextBlock Text="Группа/Пользователь:" Style="{StaticResource LabelStyle}" Margin="0,0,0,4"/>
+                        <ComboBox ItemsSource="{Binding AvailablePrincipals}" 
+                                  SelectedItem="{Binding SelectedPrincipal}"
+                                  DisplayMemberPath="FullName"
+                                  Style="{StaticResource ModernComboBoxStyle}"/>
+                    </StackPanel>
+                    
+                    <StackPanel Grid.Row="0" Grid.Column="1" Margin="8,0,0,8">
+                        <TextBlock Text="Или введите вручную:" Style="{StaticResource LabelStyle}" Margin="0,0,0,4"/>
+                        <TextBox Text="{Binding CustomPrincipalName, UpdateSourceTrigger=PropertyChanged}" 
+                                 Style="{StaticResource ModernTextBoxStyle}"
+                                 ToolTip="DOMAIN\UserName или имя"/>
+                    </StackPanel>
+                    
+                    <!-- Rights Checkboxes -->
+                    <StackPanel Grid.Row="1" Grid.ColumnSpan="2" Margin="0,0,0,8">
+                        <TextBlock Text="Права доступа:" Style="{StaticResource LabelStyle}" Margin="0,0,0,4"/>
+                        <WrapPanel>
+                            <CheckBox Content="Чтение" IsChecked="{Binding HasRead}" Margin="0,0,16,0"/>
+                            <CheckBox Content="Запись" IsChecked="{Binding HasWrite}" Margin="0,0,16,0"/>
+                            <CheckBox Content="Изменение" IsChecked="{Binding HasModify}" Margin="0,0,16,0"/>
+                            <CheckBox Content="Полный доступ" IsChecked="{Binding HasFullControl}" Margin="0,0,16,0"/>
+                        </WrapPanel>
+                    </StackPanel>
+                    
+                    <!-- Options -->
+                    <StackPanel Grid.Row="2" Grid.ColumnSpan="2" Orientation="Horizontal" Margin="0,0,0,12">
+                        <CheckBox Content="Запретить (Deny)" IsChecked="{Binding IsDeny}" Margin="0,0,24,0"/>
+                        <CheckBox Content="Применить к дочерним папкам" IsChecked="{Binding ApplyToChildren}"/>
+                    </StackPanel>
+                    
+                    <!-- Add/Remove Buttons -->
+                    <StackPanel Grid.Row="3" Grid.ColumnSpan="2" Orientation="Horizontal">
+                        <Button Content="➕ Добавить правило" Padding="14,8" 
+                                Style="{StaticResource SecondaryButtonStyle}" 
+                                Command="{Binding AddRuleCommand}"/>
+                        <Button Content="🗑️ Удалить выбранное" Padding="14,8" Margin="8,0,0,0"
+                                Style="{StaticResource SecondaryButtonStyle}" 
+                                Command="{Binding RemoveRuleCommand}"/>
+                    </StackPanel>
+                </Grid>
+            </StackPanel>
+        </Border>
+        
+        <!-- Footer -->
+        <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right">
+            <Button Content="Отмена" Padding="20,10" Style="{StaticResource SecondaryButtonStyle}" 
+                    IsCancel="True" Click="Cancel_Click"/>
+            <Button Content="✅ Применить" Padding="20,10" Margin="12,0,0,0" 
+                    Style="{StaticResource PrimaryButtonStyle}" Click="Apply_Click"/>
+        </StackPanel>
+    </Grid>
+</Window>

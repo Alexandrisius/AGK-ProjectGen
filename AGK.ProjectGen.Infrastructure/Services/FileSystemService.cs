@@ -46,4 +46,22 @@ public class FileSystemService : IFileSystemService
             return false;
         }
     }
+    
+    public bool DirectoryContainsFiles(string path)
+    {
+        if (!Directory.Exists(path)) return false;
+        return Directory.EnumerateFiles(path, "*", SearchOption.AllDirectories).Any();
+    }
+    
+    public List<string> GetAllFilesInDirectory(string path)
+    {
+        if (!Directory.Exists(path)) return new List<string>();
+        return Directory.EnumerateFiles(path, "*", SearchOption.AllDirectories).ToList();
+    }
+    
+    public bool IsDirectoryEmpty(string path)
+    {
+        if (!Directory.Exists(path)) return true;
+        return !Directory.EnumerateFileSystemEntries(path).Any();
+    }
 }

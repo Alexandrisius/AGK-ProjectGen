@@ -13,4 +13,19 @@ public interface IFileSystemService
     
     // Validation
     bool IsPathValid(string path);
+    
+    /// <summary>
+    /// Проверяет, содержит ли директория файлы (включая поддиректории).
+    /// </summary>
+    bool DirectoryContainsFiles(string path);
+    
+    /// <summary>
+    /// Получает список всех файлов в директории и поддиректориях.
+    /// </summary>
+    List<string> GetAllFilesInDirectory(string path);
+    
+    /// <summary>
+    /// Проверяет, пуста ли директория (нет файлов и поддиректорий).
+    /// </summary>
+    bool IsDirectoryEmpty(string path);
 }

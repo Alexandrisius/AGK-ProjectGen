@@ -16,6 +16,7 @@ public class ProjectUpdaterTests : IDisposable
     private readonly string _testRootPath;
     private readonly FakeFileSystemService _fakeFs;
     private readonly FakeAclService _fakeAcl;
+    private readonly FakeAclFormulaEngine _fakeAclEngine;
     private readonly ProjectUpdater _updater;
 
     public ProjectUpdaterTests()
@@ -24,7 +25,8 @@ public class ProjectUpdaterTests : IDisposable
         Directory.CreateDirectory(_testRootPath);
         _fakeFs = new FakeFileSystemService();
         _fakeAcl = new FakeAclService();
-        _updater = new ProjectUpdater(_fakeFs, _fakeAcl);
+        _fakeAclEngine = new FakeAclFormulaEngine();
+        _updater = new ProjectUpdater(_fakeFs, _fakeAcl, _fakeAclEngine);
     }
 
     public void Dispose()
@@ -239,7 +241,9 @@ public class ProjectUpdaterTests : IDisposable
     {
         public HashSet<string> ExistingPaths { get; } = new();
         public HashSet<string> CreatedPaths { get; } = new();
+        public HashSet<string> DeletedPaths { get; } = new();
         public List<string> CreationOrder { get; } = new();
+        public Dictionary<string, List<string>> FilesInDirectories { get; } = new();
 
         public bool DirectoryExists(string path) => ExistingPaths.Contains(path);
         
@@ -251,8 +255,29 @@ public class ProjectUpdaterTests : IDisposable
         }
         
         public void RenameDirectory(string oldPath, string newPath) { }
-        public void DeleteDirectory(string path) { }
+        
+        public void DeleteDirectory(string path)
+        {
+            DeletedPaths.Add(path);
+            ExistingPaths.Remove(path);
+        }
+        
         public bool IsPathValid(string path) => true;
+        
+        public bool DirectoryContainsFiles(string path)
+        {
+            return FilesInDirectories.ContainsKey(path) && FilesInDirectories[path].Count > 0;
+        }
+        
+        public List<string> GetAllFilesInDirectory(string path)
+        {
+            return FilesInDirectories.TryGetValue(path, out var files) ? files : new List<string>();
+        }
+        
+        public bool IsDirectoryEmpty(string path)
+        {
+            return !FilesInDirectories.ContainsKey(path) || FilesInDirectories[path].Count == 0;
+        }
     }
 
     private class FakeAclService : IAclService
@@ -265,6 +290,24 @@ public class ProjectUpdaterTests : IDisposable
         }
 
         public List<AclRule> GetDirectoryAcl(string path) => new();
+    }
+    
+    private class FakeAclFormulaEngine : IAclFormulaEngine
+    {
+        public List<AclRule> CalculateAclRules(GeneratedNode node, StructureNodeDefinition? nodeDef, ProfileSchema profile)
+        {
+            return new List<AclRule>();
+        }
+
+        public bool EvaluateCondition(AclCondition condition, Dictionary<string, object> context)
+        {
+            return true;
+        }
+
+        public bool EvaluateConditions(List<AclCondition> conditions, Dictionary<string, object> context)
+        {
+            return conditions.Count == 0 || conditions.All(c => EvaluateCondition(c, context));
+        }
     }
 
     #endregion
