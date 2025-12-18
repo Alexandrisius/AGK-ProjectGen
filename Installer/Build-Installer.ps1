@@ -67,7 +67,7 @@ if ($Version) {
     
     foreach ($pattern in $patterns) {
         $tag = $pattern.Split(">")[0] + ">" # <Version>
-        $endTag = "</" + $pattern.Split("<")[2] # </Version>
+        $endTag = "<" + $pattern.Split("<")[2] # </Version>
         $replacement = "$tag$Version$endTag"
         
         if ($content -match $pattern) {

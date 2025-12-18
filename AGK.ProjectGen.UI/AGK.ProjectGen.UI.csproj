@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
     <ProjectReference Include="..\AGK.ProjectGen.Domain\AGK.ProjectGen.Domain.csproj" />
@@ -24,9 +24,9 @@
     <ApplicationIcon>app.ico</ApplicationIcon>
     
     <!-- Метаданные приложения -->
-    <Version>1.0.0</Version>
-    <AssemblyVersion>1.0.0.0</AssemblyVersion>
-    <FileVersion>1.0.0.0</FileVersion>
+    <Version>1.2.0</Version>
+    <AssemblyVersion>1.2.0</AssemblyVersion>
+    <FileVersion>1.2.0</FileVersion>
     <Product>AGK ProjectGen</Product>
     <Company>AGK Software</Company>
     <Authors>AGK Team</Authors>
@@ -47,3 +47,5 @@
   </ItemGroup>
 
 </Project>
+
+
