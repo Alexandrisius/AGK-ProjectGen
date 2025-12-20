@@ -373,7 +373,8 @@
                                             <DataGrid ItemsSource="{Binding SelectedDictionary.Items}"
                                                       SelectedItem="{Binding SelectedDictionaryItem}"
                                                       Style="{StaticResource ModernDataGridStyle}"
-                                                      RowHeight="36"
+                                                      IsReadOnly="False"
+                                                      RowHeight="40"
                                                       HorizontalAlignment="Left"
                                                       MaxWidth="800">
                                                 <DataGrid.Columns>

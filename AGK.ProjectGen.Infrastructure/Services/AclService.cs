@@ -46,7 +46,22 @@ public class AclService : IAclService
             }
         }
 
-        // 3. Add Rules
+        // 3. Всегда добавляем полные права для текущего пользователя (создателя)
+        // ВАЖНО: это делается ПОСЛЕ очистки explicit rules, чтобы правило не удалялось
+        var currentUser = WindowsIdentity.GetCurrent();
+        if (currentUser.User != null)
+        {
+            var creatorRule = new FileSystemAccessRule(
+                currentUser.User,
+                FileSystemRights.FullControl,
+                InheritanceFlags.ContainerInherit | InheritanceFlags.ObjectInherit,
+                PropagationFlags.None,
+                AccessControlType.Allow
+            );
+            searchConfig.AddAccessRule(creatorRule);
+        }
+
+        // 4. Add Rules from profile
         foreach (var rule in rules)
         {
             try
@@ -72,7 +87,7 @@ public class AclService : IAclService
             }
         }
 
-        // 4. Commit to disk
+        // 5. Commit to disk
         dirInfo.SetAccessControl(searchConfig);
     }
 

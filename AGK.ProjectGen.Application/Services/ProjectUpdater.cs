@@ -136,7 +136,7 @@ public class ProjectUpdater : IProjectUpdater
             }
         }
         
-        // 2. Затем создаём новые папки (от родителей к детям - по возрастанию длины пути)
+        // 2. Сначала создаём ВСЕ папки (от родителей к детям - по возрастанию длины пути)
         var createNodes = diffPlan
             .Where(n => n.Operation == NodeOperation.Create && n.IsIncluded)
             .OrderBy(n => n.FullPath.Length)
@@ -145,10 +145,17 @@ public class ProjectUpdater : IProjectUpdater
         foreach (var node in createNodes)
         {
             _fileSystem.CreateDirectory(node.FullPath);
+        }
+        
+        // 3. Затем применяем ACL ко всем созданным папкам
+        // Важно: это делается ПОСЛЕ создания всех папок, чтобы ограничение прав
+        // на родительских папках не блокировало создание дочерних
+        foreach (var node in createNodes)
+        {
             ApplyAcl(node, profile);
         }
         
-        // 3. Обновляем ACL для существующих папок при необходимости
+        // 4. Обновляем ACL для существующих папок при необходимости
         var updateAclNodes = diffPlan
             .Where(n => n.Operation == NodeOperation.UpdateAcl)
             .ToList();

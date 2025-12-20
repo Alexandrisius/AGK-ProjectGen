@@ -339,10 +339,11 @@
                                                           SelectedItem="{Binding DataContext.SelectedTableRow, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                                           Style="{StaticResource ModernDataGridStyle}"
                                                           AutoGenerateColumns="False"
+                                                          IsReadOnly="False"
                                                           CanUserAddRows="False"
                                                           MinHeight="60"
                                                           MaxHeight="200"
-                                                          RowHeight="32">
+                                                          RowHeight="40">
                                                     <DataGrid.Columns>
                                                         <DataGridTextColumn Header="Код / №" Binding="{Binding Code}" Width="120"/>
                                                         <DataGridTextColumn Header="Наименование" Binding="{Binding Name}" Width="*"/>

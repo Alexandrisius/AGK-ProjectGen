@@ -140,16 +140,8 @@ public partial class ProjectsListViewModel : ObservableObject
         var columns = new List<ProjectColumnDefinition>();
         
         // Системные столбцы
-        columns.Add(new ProjectColumnDefinition
-        {
-            Key = "Name",
-            Header = "НАЗВАНИЕ",
-            IsSystemColumn = true,
-            IsRequired = true,
-            DisplayIndex = 0,
-            Width = 200,
-            BindingPath = "Name"
-        });
+        // Системные столбцы
+
         
         columns.Add(new ProjectColumnDefinition
         {
