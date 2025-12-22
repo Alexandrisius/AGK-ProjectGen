@@ -69,7 +69,8 @@ public class ProjectUpdater : IProjectUpdater
             }
             else
             {
-                node.Operation = NodeOperation.None;
+                // Существующая папка — проверяем, нужно ли обновить ACL
+                node.Operation = node.HasAclChanges ? NodeOperation.UpdateAcl : NodeOperation.None;
             }
         }
 
@@ -170,10 +171,13 @@ public class ProjectUpdater : IProjectUpdater
 
     private void ApplyAcl(GeneratedNode node, ProfileSchema profile)
     {
-        // 1. Получаем правила через AclFormulaEngine (учитывает формулы, bindings и overrides)
-        var rules = _aclFormulaEngine.CalculateAclRules(node, null, profile);
+        // 1. Найти определение узла структуры по сохранённому ID
+        var nodeDef = FindStructureNodeDefinition(node.StructureDefinitionId, profile);
         
-        // 2. Если есть правила, применяем их
+        // 2. Получаем правила через AclFormulaEngine (учитывает формулы, bindings и overrides)
+        var rules = _aclFormulaEngine.CalculateAclRules(node, nodeDef, profile);
+        
+        // 3. Если есть правила, применяем их
         if (rules.Count > 0)
         {
             // По умолчанию отключаем наследование (только создатель-админ)
@@ -199,6 +203,27 @@ public class ProjectUpdater : IProjectUpdater
         
         // Сохраняем рассчитанные правила для предпросмотра
         node.PlannedAcl = rules;
+    }
+    
+    /// <summary>
+    /// Ищет определение узла структуры по ID рекурсивно.
+    /// </summary>
+    private StructureNodeDefinition? FindStructureNodeDefinition(string? defId, ProfileSchema profile)
+    {
+        if (string.IsNullOrEmpty(defId)) return null;
+        
+        return FindInNodes(profile.Structure.RootNodes, defId);
+    }
+    
+    private StructureNodeDefinition? FindInNodes(IEnumerable<StructureNodeDefinition> nodes, string id)
+    {
+        foreach (var node in nodes)
+        {
+            if (node.Id == id) return node;
+            var found = FindInNodes(node.Children, id);
+            if (found != null) return found;
+        }
+        return null;
     }
 
 }

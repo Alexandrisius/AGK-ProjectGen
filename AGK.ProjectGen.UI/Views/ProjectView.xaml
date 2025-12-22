@@ -58,6 +58,15 @@
                 <TextBlock Text="🔐" FontSize="12" Margin="8,0,0,0" VerticalAlignment="Center"
                            Visibility="{Binding HasAclRules, Converter={StaticResource BoolToVisibilityConverter}}"
                            ToolTip="Назначены права доступа"/>
+                <!-- Warning метка (оранжевая) для ошибок валидации -->
+                <Border Background="#FF9800" 
+                        CornerRadius="4" 
+                        Padding="6,2" 
+                        Margin="8,0,0,0"
+                        Visibility="{Binding HasValidationError, Converter={StaticResource BoolToVisibilityConverter}}"
+                        ToolTip="{Binding ValidationMessage}">
+                    <TextBlock Text="⚠️ ТРЕБУЕТСЯ" FontSize="10" FontWeight="Bold" Foreground="White"/>
+                </Border>
             </StackPanel>
         </HierarchicalDataTemplate>
         
@@ -398,9 +407,7 @@
                                         <MenuItem Header="🔒 Назначить права доступа..." 
                                                   Command="{Binding PlacementTarget.DataContext.AssignAclCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
                                                   CommandParameter="{Binding PlacementTarget.DataContext.SelectedNode, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
-                                        <Separator/>
-                                        <MenuItem Header="🔄 Пересчитать имена" 
-                                                  Command="{Binding PlacementTarget.DataContext.RecalculateNamesCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
+
                                     </ContextMenu>
                                 </TreeView.ContextMenu>
                             </TreeView>

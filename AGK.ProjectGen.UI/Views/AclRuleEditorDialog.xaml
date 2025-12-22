@@ -81,7 +81,7 @@
                     
                     <ListBox ItemsSource="{Binding Rules}" 
                              SelectedItem="{Binding SelectedRule}"
-                             Background="Transparent" BorderThickness="0">
+                             Style="{StaticResource ModernListBoxStyle}">
                         <ListBox.ItemTemplate>
                             <DataTemplate>
                                 <StackPanel Margin="4">
@@ -144,36 +144,66 @@
                                     Command="{Binding RemoveConditionCommand}"/>
                         </StackPanel>
                         
-                        <ItemsControl ItemsSource="{Binding CurrentConditions}">
-                            <ItemsControl.ItemTemplate>
-                                <DataTemplate>
-                                    <Border Background="White" CornerRadius="4" Padding="8" Margin="0,0,0,8">
-                                        <Grid>
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="*"/>
-                                                <ColumnDefinition Width="Auto"/>
-                                                <ColumnDefinition Width="*"/>
-                                            </Grid.ColumnDefinitions>
-                                            
-                                            <ComboBox Grid.Column="0" 
-                                                      Text="{Binding AttributePath, UpdateSourceTrigger=PropertyChanged}"
+                        <DataGrid ItemsSource="{Binding CurrentConditions}"
+                                  AutoGenerateColumns="False"
+                                  CanUserAddRows="False"
+                                  CanUserDeleteRows="False"
+                                  CanUserReorderColumns="False"
+                                  HeadersVisibility="Column"
+                                  GridLinesVisibility="Horizontal"
+                                  HorizontalGridLinesBrush="{StaticResource BorderBrush}"
+                                  RowHeight="44"
+                                  BorderThickness="1"
+                                  BorderBrush="{StaticResource BorderBrush}"
+                                  Background="White">
+                            <DataGrid.Columns>
+                                <!-- Чекбокс выбора -->
+                                <DataGridTemplateColumn Width="32" CanUserResize="False">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <CheckBox IsChecked="{Binding IsSelected, UpdateSourceTrigger=PropertyChanged}"
+                                                      HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                                
+                                <!-- Атрибут -->
+                                <DataGridTemplateColumn Header="Атрибут" Width="*" MinWidth="120">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <ComboBox Text="{Binding AttributePath, UpdateSourceTrigger=PropertyChanged}"
                                                       ItemsSource="{Binding DataContext.CommonAttributes, RelativeSource={RelativeSource AncestorType=Window}}"
                                                       IsEditable="True"
-                                                      Style="{StaticResource ModernComboBoxStyle}"/>
-                                            
-                                            <ComboBox Grid.Column="1" Margin="8,0"
-                                                      ItemsSource="{Binding Source={StaticResource ConditionOperators}}"
-                                                      SelectedItem="{Binding Operator}"
-                                                      Style="{StaticResource ModernComboBoxStyle}" Width="120"/>
-                                            
-                                            <TextBox Grid.Column="2" 
-                                                     Text="{Binding Value, UpdateSourceTrigger=PropertyChanged}"
-                                                     Style="{StaticResource ModernTextBoxStyle}"/>
-                                        </Grid>
-                                    </Border>
-                                </DataTemplate>
-                            </ItemsControl.ItemTemplate>
-                        </ItemsControl>
+                                                      Style="{StaticResource ModernComboBoxStyle}"
+                                                      Margin="2"/>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                                
+                                <!-- Оператор -->
+                                <DataGridTemplateColumn Header="Оператор" Width="100">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <ComboBox ItemsSource="{Binding Source={StaticResource ConditionOperators}}"
+                                                      SelectedItem="{Binding Operator, UpdateSourceTrigger=PropertyChanged}"
+                                                      Style="{StaticResource ModernComboBoxStyle}"
+                                                      Margin="2"/>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                                
+                                <!-- Значение -->
+                                <DataGridTemplateColumn Header="Значение" Width="*" MinWidth="80">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <TextBox Text="{Binding Value, UpdateSourceTrigger=PropertyChanged}"
+                                                     Style="{StaticResource ModernTextBoxStyle}"
+                                                     Padding="6,4" Margin="2"/>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                            </DataGrid.Columns>
+                        </DataGrid>
                         
                         <!-- Description -->
                         <TextBlock Text="Описание правила" Style="{StaticResource LabelStyle}" Margin="0,8,0,4"/>

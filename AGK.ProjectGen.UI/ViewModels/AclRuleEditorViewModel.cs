@@ -124,6 +124,9 @@ public partial class AclRuleEditorViewModel : ObservableObject
     /// </summary>
     public void ApplyChanges()
     {
+        // Сначала применяем изменения условий для текущего правила
+        ApplyConditionChanges();
+        
         _originalRules.Clear();
         foreach (var rule in Rules)
         {
@@ -178,24 +181,54 @@ public partial class AclRuleEditorViewModel : ObservableObject
     {
         if (SelectedRule == null) return;
         
-        var condition = new AclCondition
-        {
-            AttributePath = "Discipline.Code",
-            Operator = ConditionOperator.Equals,
-            Value = ""
-        };
-        SelectedRule.Conditions.Add(condition);
-        CurrentConditions.Add(new AclConditionViewModel(condition));
+        // Добавляем только в UI-коллекцию (копия)
+        // Изменения применятся к SelectedRule.Conditions при ApplyConditionChanges()
+        var newCondition = new AclConditionViewModel();
+        CurrentConditions.Add(newCondition);
     }
     
+    /// <summary>
+    /// Удаляет все условия, у которых установлен чекбокс IsSelected.
+    /// </summary>
     [RelayCommand]
     private void RemoveCondition()
     {
-        if (SelectedRule == null || SelectedCondition == null) return;
+        if (SelectedRule == null) return;
         
-        SelectedRule.Conditions.Remove(SelectedCondition.Condition);
-        CurrentConditions.Remove(SelectedCondition);
-        SelectedCondition = CurrentConditions.FirstOrDefault();
+        // Собираем выбранные условия
+        var selectedItems = CurrentConditions.Where(c => c.IsSelected).ToList();
+        
+        if (selectedItems.Count == 0)
+        {
+            System.Windows.MessageBox.Show(
+                "Выберите условия для удаления (отметьте чекбоксами)",
+                "Нет выбранных условий",
+                System.Windows.MessageBoxButton.OK,
+                System.Windows.MessageBoxImage.Information);
+            return;
+        }
+        
+        // Удаляем из UI-коллекции (изменения применятся при сохранении)
+        foreach (var item in selectedItems)
+        {
+            CurrentConditions.Remove(item);
+        }
+    }
+    
+    /// <summary>
+    /// Применяет изменения условий к оригинальному правилу.
+    /// Вызывается перед сохранением диалога.
+    /// </summary>
+    public void ApplyConditionChanges()
+    {
+        if (SelectedRule == null) return;
+        
+        // Перестраиваем коллекцию условий из UI-копий
+        SelectedRule.Conditions.Clear();
+        foreach (var conditionVm in CurrentConditions)
+        {
+            SelectedRule.Conditions.Add(conditionVm.ApplyToOriginal());
+        }
     }
     
     [RelayCommand]
@@ -385,30 +418,86 @@ public partial class AclRuleEditorViewModel : ObservableObject
 
 public partial class AclConditionViewModel : ObservableObject
 {
-    public AclCondition Condition { get; }
+    /// <summary>
+    /// Оригинальное условие (для применения изменений при сохранении).
+    /// </summary>
+    public AclCondition? OriginalCondition { get; private set; }
     
+    /// <summary>
+    /// Признак нового условия (ещё не сохранённого).
+    /// </summary>
+    public bool IsNew { get; set; }
+    
+    [ObservableProperty]
+    private bool _isSelected;
+    
+    [ObservableProperty]
+    private string _attributePath = string.Empty;
+    
+    [ObservableProperty]
+    private ConditionOperator _operator = ConditionOperator.Equals;
+    
+    [ObservableProperty]
+    private string _value = string.Empty;
+    
+    /// <summary>
+    /// Создаёт ViewModel из существующего условия (копирует данные).
+    /// </summary>
     public AclConditionViewModel(AclCondition condition)
     {
-        Condition = condition;
+        OriginalCondition = condition;
+        IsNew = false;
+        
+        // Копируем данные
+        _attributePath = condition.AttributePath;
+        _operator = condition.Operator;
+        _value = condition.Value;
     }
     
-    public string AttributePath
+    /// <summary>
+    /// Создаёт новую ViewModel для нового условия.
+    /// </summary>
+    public AclConditionViewModel()
     {
-        get => Condition.AttributePath;
-        set { Condition.AttributePath = value; OnPropertyChanged(); }
+        OriginalCondition = null;
+        IsNew = true;
+        _attributePath = "Discipline.Code";
+        _operator = ConditionOperator.Equals;
+        _value = "";
     }
     
-    public ConditionOperator Operator
+    /// <summary>
+    /// Применяет изменения к оригинальному условию или создаёт новое.
+    /// </summary>
+    public AclCondition ApplyToOriginal()
     {
-        get => Condition.Operator;
-        set { Condition.Operator = value; OnPropertyChanged(); }
+        if (OriginalCondition != null)
+        {
+            OriginalCondition.AttributePath = AttributePath;
+            OriginalCondition.Operator = Operator;
+            OriginalCondition.Value = Value;
+            return OriginalCondition;
+        }
+        else
+        {
+            return new AclCondition
+            {
+                AttributePath = AttributePath,
+                Operator = Operator,
+                Value = Value
+            };
+        }
     }
     
-    public string Value
-    {
-        get => Condition.Value;
-        set { Condition.Value = value; OnPropertyChanged(); }
-    }
+    /// <summary>
+    /// Для обратной совместимости — возвращает текущее условие.
+    /// </summary>
+    public AclCondition Condition => OriginalCondition ?? new AclCondition 
+    { 
+        AttributePath = AttributePath, 
+        Operator = Operator, 
+        Value = Value 
+    };
     
-    public string DisplayText => Condition.ToString();
+    public string DisplayText => $"{AttributePath} {Operator} '{Value}'";
 }

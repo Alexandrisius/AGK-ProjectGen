@@ -21,6 +21,11 @@ public class GeneratedNode : INotifyPropertyChanged
     // Formula used to generate this node's name (for recalculation)
     public string? NameFormula { get; set; }
     
+    /// <summary>
+    /// ID определения узла структуры (StructureNodeDefinition.Id) для поиска ACL правил.
+    /// </summary>
+    public string? StructureDefinitionId { get; set; }
+    
     // Context values (e.g. this node belongs to Stage=P, Building=1)
     public Dictionary<string, object> ContextAttributes { get; set; } = new();
     
@@ -61,6 +66,21 @@ public class GeneratedNode : INotifyPropertyChanged
     /// Признак наличия назначенных ACL правил (для отображения иконки в UI).
     /// </summary>
     public bool HasAclRules => _nodeAclOverrides.Count > 0 || _plannedAcl.Count > 0;
+    
+    /// <summary>
+    /// Указывает, что узел содержит ошибку валидации (например, нельзя пропустить уровень из-за ACL).
+    /// </summary>
+    public bool HasValidationError { get; set; }
+    
+    /// <summary>
+    /// Сообщение об ошибке валидации для отображения в UI.
+    /// </summary>
+    public string? ValidationMessage { get; set; }
+    
+    /// <summary>
+    /// Признак того, что ACL-правила были изменены и требуют применения к папке.
+    /// </summary>
+    public bool HasAclChanges { get; set; }
     
     // Plan info used during diff/generation
     public bool Exists { get; set; }

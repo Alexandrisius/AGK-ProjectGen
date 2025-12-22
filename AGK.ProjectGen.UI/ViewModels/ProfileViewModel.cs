@@ -18,9 +18,49 @@ public partial class ProfileViewModel : ObservableObject
     
     [ObservableProperty]
     private ProfileSchema? _selectedProfile;
+    
+    /// <summary>
+    /// Вызывается ДО смены профиля. Сбрасываем выбранные элементы,
+    /// чтобы биндинги ComboBox не затёрли NodeTypeId узла старого профиля.
+    /// </summary>
+    partial void OnSelectedProfileChanging(ProfileSchema? value)
+    {
+        // Сбрасываем выбранные элементы ДО смены профиля
+        SelectedStructureNode = null;
+        SelectedDictionary = null;
+        SelectedDictionaryItem = null;
+        SelectedDictionaryItems.Clear();
+    }
+
 
     [ObservableProperty]
     private StructureNodeDefinition? _selectedStructureNode;
+    
+    /// <summary>
+    /// Вызывается после изменения выбранного узла структуры.
+    /// Уведомляем UI об изменении SelectedNodeType для обновления ComboBox.
+    /// </summary>
+    partial void OnSelectedStructureNodeChanged(StructureNodeDefinition? value)
+    {
+        OnPropertyChanged(nameof(SelectedNodeType));
+    }
+    
+    /// <summary>
+    /// Выбранный тип узла для ComboBox. Работает напрямую с объектами NodeTypeSchema,
+    /// что более надёжно чем биндинг через SelectedValue/SelectedValuePath.
+    /// </summary>
+    public NodeTypeSchema? SelectedNodeType
+    {
+        get => SelectedProfile?.NodeTypes.FirstOrDefault(t => t.TypeId == SelectedStructureNode?.NodeTypeId);
+        set
+        {
+            if (SelectedStructureNode != null && value != null)
+            {
+                SelectedStructureNode.NodeTypeId = value.TypeId;
+                OnPropertyChanged();
+            }
+        }
+    }
 
     [ObservableProperty]
     private DictionarySchema? _selectedDictionary;
@@ -237,6 +277,25 @@ public partial class ProfileViewModel : ObservableObject
         SelectedProfile = newProfile;
     }
 
+    [RelayCommand]
+    private void BrowseDefaultPath()
+    {
+        if (SelectedProfile == null) return;
+        
+        var dialog = new Microsoft.Win32.OpenFolderDialog
+        {
+            Title = "Выберите папку по умолчанию для проектов",
+            InitialDirectory = SelectedProfile.DefaultProjectPath ?? Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments)
+        };
+        
+        if (dialog.ShowDialog() == true)
+        {
+            SelectedProfile.DefaultProjectPath = dialog.FolderName;
+            // Уведомляем UI об изменении профиля для обновления текстового поля
+            OnPropertyChanged(nameof(SelectedProfile));
+        }
+    }
+
     /// <summary>
     /// Копирование текущего профиля (глубокая копия)
     /// </summary>
@@ -377,9 +436,33 @@ public partial class ProfileViewModel : ObservableObject
     {
         if (SelectedProfile == null) return;
         
+        // Показываем диалог для ввода ключа атрибута
+        var dialog = new Views.InputDialog(
+            "Новый атрибут", 
+            "Введите ключ атрибута (например: ProjectCode, Client):", 
+            "NewAttribute");
+        dialog.Owner = System.Windows.Application.Current.MainWindow;
+        
+        if (dialog.ShowDialog() != true || string.IsNullOrWhiteSpace(dialog.InputValue))
+        {
+            return;
+        }
+        
+        // Проверяем уникальность ключа
+        var newKey = dialog.InputValue.Trim();
+        if (SelectedProfile.ProjectAttributes.Any(a => a.Key == newKey))
+        {
+            System.Windows.MessageBox.Show(
+                $"Атрибут с ключом \"{newKey}\" уже существует.",
+                "Ошибка",
+                System.Windows.MessageBoxButton.OK,
+                System.Windows.MessageBoxImage.Warning);
+            return;
+        }
+        
         var newAttr = new FieldSchema
         {
-            Key = $"Attr{SelectedProfile.ProjectAttributes.Count + 1}",
+            Key = newKey,
             DisplayName = "Новый атрибут",
             Type = AttributeType.String,
             Order = SelectedProfile.ProjectAttributes.Count
@@ -392,6 +475,10 @@ public partial class ProfileViewModel : ObservableObject
     private void RemoveAttribute()
     {
         if (SelectedProfile == null || SelectedAttribute == null) return;
+        
+        if (!Views.ConfirmDeleteDialog.Show("атрибут", SelectedAttribute.DisplayName))
+            return;
+        
         SelectedProfile.ProjectAttributes.Remove(SelectedAttribute);
         SelectedAttribute = null;
     }
@@ -405,9 +492,33 @@ public partial class ProfileViewModel : ObservableObject
     {
         if (SelectedProfile == null) return;
         
+        // Показываем диалог для ввода ключа словаря
+        var dialog = new Views.InputDialog(
+            "Новый словарь", 
+            "Введите ключ словаря (например: Stages, Disciplines):", 
+            "NewDictionary");
+        dialog.Owner = System.Windows.Application.Current.MainWindow;
+        
+        if (dialog.ShowDialog() != true || string.IsNullOrWhiteSpace(dialog.InputValue))
+        {
+            return;
+        }
+        
+        // Проверяем уникальность ключа
+        var newKey = dialog.InputValue.Trim();
+        if (SelectedProfile.Dictionaries.Any(d => d.Key == newKey))
+        {
+            System.Windows.MessageBox.Show(
+                $"Словарь с ключом \"{newKey}\" уже существует.",
+                "Ошибка",
+                System.Windows.MessageBoxButton.OK,
+                System.Windows.MessageBoxImage.Warning);
+            return;
+        }
+        
         var newDict = new DictionarySchema
         {
-            Key = $"NewDict{SelectedProfile.Dictionaries.Count + 1}",
+            Key = newKey,
             DisplayName = "Новый словарь"
         };
         SelectedProfile.Dictionaries.Add(newDict);
@@ -418,6 +529,10 @@ public partial class ProfileViewModel : ObservableObject
     private void RemoveDictionary()
     {
         if (SelectedProfile == null || SelectedDictionary == null) return;
+        
+        if (!Views.ConfirmDeleteDialog.Show("словарь", SelectedDictionary.DisplayName))
+            return;
+        
         SelectedProfile.Dictionaries.Remove(SelectedDictionary);
         SelectedDictionary = null;
     }
@@ -440,6 +555,10 @@ public partial class ProfileViewModel : ObservableObject
     private void RemoveDictionaryItem()
     {
         if (SelectedDictionary == null || SelectedDictionaryItem == null) return;
+        
+        if (!Views.ConfirmDeleteDialog.Show("элемент словаря", SelectedDictionaryItem.Name))
+            return;
+        
         SelectedDictionary.Items.Remove(SelectedDictionaryItem);
         SelectedDictionaryItem = null;
     }
@@ -452,9 +571,34 @@ public partial class ProfileViewModel : ObservableObject
     private void AddNodeType()
     {
         if (SelectedProfile == null) return;
+        
+        // Показываем диалог для ввода ID типа узла
+        var dialog = new Views.InputDialog(
+            "Новый тип узла", 
+            "Введите ID типа (например: StageFolder, DisciplineFolder):", 
+            "NewFolder");
+        dialog.Owner = System.Windows.Application.Current.MainWindow;
+        
+        if (dialog.ShowDialog() != true || string.IsNullOrWhiteSpace(dialog.InputValue))
+        {
+            return;
+        }
+        
+        // Проверяем уникальность ID
+        var newTypeId = dialog.InputValue.Trim();
+        if (SelectedProfile.NodeTypes.Any(t => t.TypeId == newTypeId))
+        {
+            System.Windows.MessageBox.Show(
+                $"Тип узла с ID \"{newTypeId}\" уже существует.",
+                "Ошибка",
+                System.Windows.MessageBoxButton.OK,
+                System.Windows.MessageBoxImage.Warning);
+            return;
+        }
+        
         SelectedProfile.NodeTypes.Add(new NodeTypeSchema 
         { 
-            TypeId = $"Type{SelectedProfile.NodeTypes.Count + 1}", 
+            TypeId = newTypeId, 
             DisplayName = "Новый тип" 
         });
     }
@@ -464,8 +608,12 @@ public partial class ProfileViewModel : ObservableObject
     {
         if (SelectedProfile == null) return;
         var last = SelectedProfile.NodeTypes.LastOrDefault();
-        if (last != null)
-            SelectedProfile.NodeTypes.Remove(last);
+        if (last == null) return;
+        
+        if (!Views.ConfirmDeleteDialog.Show("тип узла", last.DisplayName))
+            return;
+        
+        SelectedProfile.NodeTypes.Remove(last);
     }
 
     #endregion
@@ -507,6 +655,9 @@ public partial class ProfileViewModel : ObservableObject
                 System.Windows.MessageBoxImage.Warning);
             return;
         }
+        
+        if (!Views.ConfirmDeleteDialog.Show("узел структуры", SelectedStructureNode.NodeTypeId))
+            return;
         
         if (RemoveNodeRecursive(SelectedProfile.Structure.RootNodes, SelectedStructureNode))
         {

@@ -73,7 +73,8 @@ public class StructureGenerator : IGenerationService
             var newNode = new GeneratedNode
             {
                 NodeTypeId = def.NodeTypeId,
-                ContextAttributes = currentContext
+                ContextAttributes = currentContext,
+                StructureDefinitionId = def.Id
             };
 
             // Calculate Name

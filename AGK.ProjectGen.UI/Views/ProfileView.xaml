@@ -187,7 +187,24 @@
                                     
                                     <TextBlock Text="Версия" Style="{StaticResource LabelStyle}" Margin="0,0,0,6"/>
                                     <TextBox Text="{Binding SelectedProfile.Version, UpdateSourceTrigger=PropertyChanged}"
-                                             Style="{StaticResource ModernTextBoxStyle}"/>
+                                             Style="{StaticResource ModernTextBoxStyle}"
+                                             Margin="0,0,0,16"/>
+                                    
+                                    <TextBlock Text="Путь по умолчанию для проектов" Style="{StaticResource LabelStyle}" Margin="0,0,0,6"/>
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBox Grid.Column="0"
+                                                 Text="{Binding SelectedProfile.DefaultProjectPath, UpdateSourceTrigger=PropertyChanged}"
+                                                 Style="{StaticResource ModernTextBoxStyle}"
+                                                 ToolTip="Путь, который будет предложен по умолчанию при создании нового проекта"/>
+                                        <Button Grid.Column="1" Content="📂" Padding="12,8" Margin="8,0,0,0"
+                                                Style="{StaticResource SecondaryButtonStyle}"
+                                                Command="{Binding BrowseDefaultPathCommand}"
+                                                ToolTip="Выбрать папку"/>
+                                    </Grid>
                                 </StackPanel>
                             </ScrollViewer>
                         </TabItem>
@@ -217,7 +234,7 @@
                                               SelectedItem="{Binding SelectedAttribute}"
                                               Style="{StaticResource ModernDataGridStyle}">
                                         <DataGrid.Columns>
-                                            <DataGridTextColumn Header="Ключ" Binding="{Binding Key}" Width="150"/>
+                                            <DataGridTextColumn Header="Ключ" Binding="{Binding Key}" Width="150" IsReadOnly="True"/>
                                             <DataGridTextColumn Header="Название" Binding="{Binding DisplayName}" Width="*"/>
                                             <DataGridTextColumn Header="Тип" Binding="{Binding Type}" Width="140"/>
                                             <DataGridCheckBoxColumn Header="Обяз." Binding="{Binding IsRequired}" Width="80"/>
@@ -341,8 +358,10 @@
                                                 </Grid.ColumnDefinitions>
                                                 <StackPanel Grid.Column="0" Margin="0,0,8,0">
                                                     <TextBlock Text="Ключ (Key)" Style="{StaticResource LabelStyle}" Margin="0,0,0,4"/>
-                                                    <TextBox Text="{Binding SelectedDictionary.Key, UpdateSourceTrigger=PropertyChanged}"
-                                                             Style="{StaticResource ModernTextBoxStyle}"/>
+                                                    <TextBox Text="{Binding SelectedDictionary.Key}"
+                                                             Style="{StaticResource ModernTextBoxStyle}"
+                                                             IsReadOnly="True"
+                                                             ToolTip="Ключ задаётся при создании и не может быть изменён"/>
                                                 </StackPanel>
                                                 <StackPanel Grid.Column="1" Margin="8,0,0,0">
                                                     <TextBlock Text="Название" Style="{StaticResource LabelStyle}" Margin="0,0,0,4"/>
@@ -494,10 +513,12 @@
                                             <TextBlock Text="Тип узла" Style="{StaticResource LabelStyle}" Margin="0,0,0,6"/>
                                             <ComboBox ItemsSource="{Binding SelectedProfile.NodeTypes}" 
                                                       DisplayMemberPath="DisplayName" 
-                                                      SelectedValuePath="TypeId" 
-                                                      SelectedValue="{Binding SelectedStructureNode.NodeTypeId}"
+                                                      SelectedItem="{Binding SelectedNodeType, Mode=TwoWay}"
                                                       Style="{StaticResource ModernComboBoxStyle}"
                                                       Margin="0,0,0,16"/>
+
+
+
                                                       
                                             <TextBlock Text="Кратность" Style="{StaticResource LabelStyle}" Margin="0,0,0,6"/>
                                             <ComboBox SelectedValue="{Binding SelectedStructureNode.Multiplicity, Converter={StaticResource EnumToStringConverter}}"

@@ -144,6 +144,12 @@ public partial class ProjectViewModel : ObservableObject
         if (value != null)
         {
             LoadProfileSelections(value);
+            
+            // Применяем путь по умолчанию из профиля, если он задан и мы не в режиме редактирования
+            if (!IsEditMode && !string.IsNullOrEmpty(value.DefaultProjectPath))
+            {
+                ProjectPath = value.DefaultProjectPath;
+            }
         }
     }
 
@@ -553,7 +559,15 @@ public partial class ProjectViewModel : ObservableObject
             if (deletedFolders > 0) msg.Add($"Удаляются: {deletedFolders}");
             if (existingFolders > 0) msg.Add($"Без изменений: {existingFolders}");
             
-            StatusMessage = $"Превью готово. {string.Join(", ", msg)}.";
+            // Проверяем наличие ошибок валидации (например, пропущенные обязательные уровни)
+            if (HasValidationErrors(rootNode))
+            {
+                StatusMessage = $"⚠️ Невозможно создать проект. Заполните обязательные поля. {string.Join(", ", msg)}.";
+            }
+            else
+            {
+                StatusMessage = $"Превью готово. {string.Join(", ", msg)}.";
+            }
         }
         catch (Exception ex)
         {
@@ -717,7 +731,8 @@ public partial class ProjectViewModel : ObservableObject
                 Name = nodeName,
                 FullPath = Path.Combine(parent.FullPath, nodeName),
                 NameFormula = formula,
-                ContextAttributes = nodeContext
+                ContextAttributes = nodeContext,
+                StructureDefinitionId = definition.Id
             };
 
             parent.Children.Add(node);
@@ -729,10 +744,29 @@ public partial class ProjectViewModel : ObservableObject
             }
         }
         
-        // Если словарь пуст (нет выбранных элементов), пропускаем этот уровень
-        // и генерируем дочерние узлы напрямую в родителе
+        // Если словарь пуст (нет выбранных элементов), проверяем ACL-зависимости
         if (items.Count == 0)
         {
+            // Проверяем, есть ли ACL-зависимости на этот уровень в дочерних узлах
+            var blockingDependencies = GetBlockingAclDependencies(definition, profile);
+            
+            if (blockingDependencies.Count > 0)
+            {
+                // Нельзя пропустить — создаём узел-предупреждение
+                var warningNode = new GeneratedNode
+                {
+                    Name = $"⚠️ Требуется: {dict?.DisplayName ?? definition.SourceKey}",
+                    NodeTypeId = definition.NodeTypeId,
+                    FullPath = Path.Combine(parent.FullPath, $"[{definition.SourceKey}]"),
+                    HasValidationError = true,
+                    ValidationMessage = $"ACL-правила ссылаются на: {string.Join(", ", blockingDependencies)}. Необходимо выбрать хотя бы один элемент.",
+                    StructureDefinitionId = definition.Id
+                };
+                parent.Children.Add(warningNode);
+                return; // Не генерируем дочерние узлы
+            }
+            
+            // Безопасно пропускаем уровень — генерируем дочерние узлы напрямую в родителе
             foreach (var childDef in definition.Children)
             {
                 GenerateNodesRecursive(childDef, parent, profile);
@@ -782,15 +816,88 @@ public partial class ProjectViewModel : ObservableObject
         return count + node.Children.Sum(c => CountNodesByOperation(c, operation));
     }
 
+    /// <summary>
+    /// Проверяет, есть ли ACL-зависимости в дочерних узлах на указанный SourceKey.
+    /// Возвращает список AttributePath, которые ссылаются на этот SourceKey.
+    /// </summary>
+    private List<string> GetBlockingAclDependencies(StructureNodeDefinition definition, ProfileSchema profile)
+    {
+        var allPaths = new HashSet<string>();
+        CollectAclAttributePaths(definition.Children, allPaths, profile);
+        
+        // Проверяем, ссылаются ли собранные пути на SourceKey этого узла
+        var sourceKey = definition.SourceKey;
+        if (string.IsNullOrEmpty(sourceKey)) return new List<string>();
+        
+        return allPaths
+            .Where(path => path.StartsWith(sourceKey + ".", StringComparison.OrdinalIgnoreCase) 
+                        || path.Equals(sourceKey, StringComparison.OrdinalIgnoreCase))
+            .ToList();
+    }
+    
+    /// <summary>
+    /// Рекурсивно собирает все AttributePath из ACL-правил и биндингов дочерних узлов.
+    /// </summary>
+    private void CollectAclAttributePaths(IEnumerable<StructureNodeDefinition> nodes, HashSet<string> paths, ProfileSchema profile)
+    {
+        foreach (var node in nodes)
+        {
+            // Собираем из AclRules узла
+            foreach (var rule in node.AclRules)
+            {
+                foreach (var condition in rule.Conditions)
+                {
+                    if (!string.IsNullOrEmpty(condition.AttributePath))
+                    {
+                        paths.Add(condition.AttributePath);
+                    }
+                }
+            }
+            
+            // Проверяем AclBindings по NodeTypeId
+            var bindings = profile.AclBindings.Where(b => b.NodeTypeId == node.NodeTypeId);
+            foreach (var binding in bindings)
+            {
+                foreach (var condition in binding.Conditions)
+                {
+                    if (!string.IsNullOrEmpty(condition.AttributePath))
+                    {
+                        paths.Add(condition.AttributePath);
+                    }
+                }
+            }
+            
+            // Рекурсия в дочерние узлы
+            CollectAclAttributePaths(node.Children, paths, profile);
+        }
+    }
+    
+    /// <summary>
+    /// Проверяет, есть ли в структуре узлы с ошибками валидации.
+    /// </summary>
+    private bool HasValidationErrors(GeneratedNode node)
+    {
+        if (node.HasValidationError) return true;
+        return node.Children.Any(HasValidationErrors);
+    }
+
     [RelayCommand]
     private async Task CreateProject()
     {
         if (!IsPreviewGenerated || PreviewStructure.Count == 0 || SelectedProfile == null) return;
 
+        var rootNode = PreviewStructure[0];
+        
+        // Проверяем наличие ошибок валидации (ACL-зависимости на пропущенные уровни)
+        if (HasValidationErrors(rootNode))
+        {
+            StatusMessage = "⚠️ Невозможно создать проект. Заполните обязательные поля, отмеченные в превью.";
+            return;
+        }
+
         StatusMessage = IsEditMode ? "Подготовка к обновлению проекта..." : "Создание проекта...";
         try
         {
-            var rootNode = PreviewStructure[0];
             
             // Используем существующий проект в режиме редактирования или создаём новый
             var project = IsEditMode && CurrentProject != null 
@@ -977,61 +1084,7 @@ public partial class ProjectViewModel : ObservableObject
         }
     }
 
-    [RelayCommand]
-    private void RecalculateNames()
-    {
-        if (!IsPreviewGenerated || PreviewStructure.Count == 0 || SelectedProfile == null)
-        {
-            StatusMessage = "Сначала сгенерируйте превью!";
-            return;
-        }
 
-        try
-        {
-            StatusMessage = "Пересчёт имён...";
-            
-            var context = new Dictionary<string, string>
-            {
-                ["Project.Code"] = ProjectCode,
-                ["Project.Name"] = ProjectName,
-                ["Project.ShortName"] = ProjectShortName,
-                ["Project.RootPath"] = ProjectPath
-            };
-
-            RecalculateNodeNames(PreviewStructure[0], context, ProjectPath);
-            
-            var temp = PreviewStructure;
-            PreviewStructure = new ObservableCollection<GeneratedNode>();
-            PreviewStructure = temp;
-            
-            StatusMessage = "Имена пересчитаны.";
-        }
-        catch (Exception ex)
-        {
-            StatusMessage = $"Ошибка пересчёта: {ex.Message}";
-        }
-    }
-
-    private void RecalculateNodeNames(GeneratedNode node, Dictionary<string, string> context, string parentPath)
-    {
-        var nodeContext = new Dictionary<string, string>(context);
-        if (!string.IsNullOrEmpty(node.NodeTypeId))
-        {
-            nodeContext[$"{node.NodeTypeId}.Name"] = node.Name;
-        }
-
-        if (!string.IsNullOrEmpty(node.NameFormula))
-        {
-            node.Name = _namingEngine.ApplyFormula(node.NameFormula, nodeContext);
-        }
-
-        node.FullPath = Path.Combine(parentPath, node.Name);
-
-        foreach (var child in node.Children)
-        {
-            RecalculateNodeNames(child, nodeContext, node.FullPath);
-        }
-    }
 
     [RelayCommand]
     private void ViewAcl(GeneratedNode? node)
@@ -1073,7 +1126,20 @@ public partial class ProjectViewModel : ObservableObject
         }
         
         var viewModel = new AclAssignViewModel(_securityPrincipalRepository);
-        viewModel.LoadNodeInfo(node.Name, node.FullPath, node.NodeAclOverrides, node.PlannedAcl);
+        
+        // Для существующих папок загружаем реальные ACL с диска
+        List<AclRule> currentRules;
+        if (Directory.Exists(node.FullPath))
+        {
+            currentRules = _aclService.GetDirectoryAcl(node.FullPath);
+        }
+        else
+        {
+            // Для новых папок используем overrides или пустой список
+            currentRules = node.NodeAclOverrides.ToList();
+        }
+        
+        viewModel.LoadNodeInfo(node.Name, node.FullPath, currentRules, node.PlannedAcl);
         
         var dialog = new AclAssignDialog
         {
@@ -1089,6 +1155,9 @@ public partial class ProjectViewModel : ObservableObject
             {
                 node.NodeAclOverrides.Add(rule);
             }
+            
+            // Помечаем узел для обновления ACL при выполнении плана
+            node.HasAclChanges = true;
             
             // Если выбрано "применить к дочерним", копируем правила
             if (viewModel.ApplyToChildren)
@@ -1117,6 +1186,7 @@ public partial class ProjectViewModel : ObservableObject
                     Competence = rule.Competence
                 });
             }
+            child.HasAclChanges = true;
             ApplyAclToChildren(child, rules);
         }
     }

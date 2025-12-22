@@ -6,6 +6,7 @@ using AGK.ProjectGen.Infrastructure.Services;
 using AGK.ProjectGen.Infrastructure.Repositories;
 using AGK.ProjectGen.UI.ViewModels;
 using AGK.ProjectGen.UI.Services;
+using Velopack;
 
 namespace AGK.ProjectGen.UI;
 
@@ -16,6 +17,9 @@ public partial class App : System.Windows.Application
 
     public App()
     {
+        // Инициализация Velopack (должна быть первой!)
+        VelopackApp.Build().Run();
+        
         Services = ConfigureServices();
     }
 
@@ -41,6 +45,7 @@ public partial class App : System.Windows.Application
         
         // UI Services
         services.AddSingleton<IDialogService, DialogService>();
+        services.AddSingleton<IUpdateService, UpdateService>();
 
         // ViewModels
         services.AddSingleton<MainViewModel>();

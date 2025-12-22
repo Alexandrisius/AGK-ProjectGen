@@ -24,7 +24,7 @@ public partial class ProfileView : UserControl
             vm2.SelectedDictionaryItems.Clear();
         }
     }
-    
+
     /// <summary>
     /// Обновляет список элементов словаря на основе SourceKey выбранного узла.
     /// Сохраняет текущее значение SelectedItemCode чтобы избежать сброса при очистке списка.

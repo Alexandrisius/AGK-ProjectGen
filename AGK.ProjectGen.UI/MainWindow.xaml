@@ -82,11 +82,55 @@
                 <!-- Bottom Section -->
                 <Border DockPanel.Dock="Bottom" Padding="20" VerticalAlignment="Bottom">
                     <StackPanel>
-                        <Border Height="1" Background="{StaticResource SidebarLightBrush}" Margin="0,0,0,16"/>
-                        <TextBlock Text="Версия 1.0.0" 
-                                   FontSize="12" 
+                        <Border Height="1" Background="{StaticResource SidebarLightBrush}" Margin="0,0,0,12"/>
+                        
+                        <!-- Кнопка проверки обновлений -->
+                        <Button Command="{Binding CheckForUpdatesCommand}"
+                                IsEnabled="{Binding IsCheckingForUpdates, Converter={StaticResource InverseBoolConverter}}"
+                                Background="Transparent"
+                                BorderThickness="0"
+                                Cursor="Hand"
+                                HorizontalAlignment="Stretch"
+                                Margin="0,0,0,8">
+                            <Button.Template>
+                                <ControlTemplate TargetType="Button">
+                                    <Border Background="{TemplateBinding Background}" 
+                                            CornerRadius="6" 
+                                            Padding="10,8">
+                                        <ContentPresenter HorizontalAlignment="Center"/>
+                                    </Border>
+                                    <ControlTemplate.Triggers>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter Property="Background" Value="#334155"/>
+                                        </Trigger>
+                                    </ControlTemplate.Triggers>
+                                </ControlTemplate>
+                            </Button.Template>
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="🔄" FontSize="14" Margin="0,0,8,0" VerticalAlignment="Center"/>
+                                <TextBlock FontSize="12" 
+                                           Foreground="{StaticResource TextLightBrush}"
+                                           VerticalAlignment="Center">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Text" Value="Проверить обновления"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsCheckingForUpdates}" Value="True">
+                                                    <Setter Property="Text" Value="Проверка..."/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                            </StackPanel>
+                        </Button>
+                        
+                        <TextBlock FontSize="12" 
                                    Foreground="{StaticResource TextLightBrush}"
-                                   HorizontalAlignment="Center"/>
+                                   HorizontalAlignment="Center">
+                            <Run Text="Версия "/>
+                            <Run Text="{Binding CurrentVersion, Mode=OneWay}"/>
+                        </TextBlock>
                     </StackPanel>
                 </Border>
                 

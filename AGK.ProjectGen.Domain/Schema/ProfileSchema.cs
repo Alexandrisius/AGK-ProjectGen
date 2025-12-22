@@ -9,6 +9,11 @@ public class ProfileSchema
     public string Name { get; set; } = string.Empty;
     public string Version { get; set; } = "1.0";
     
+    /// <summary>
+    /// Путь по умолчанию для создания проектов с этим профилем
+    /// </summary>
+    public string? DefaultProjectPath { get; set; }
+    
     public ObservableCollection<FieldSchema> ProjectAttributes { get; set; } = new();
     public ObservableCollection<DictionarySchema> Dictionaries { get; set; } = new();
     public ObservableCollection<NodeTypeSchema> NodeTypes { get; set; } = new();

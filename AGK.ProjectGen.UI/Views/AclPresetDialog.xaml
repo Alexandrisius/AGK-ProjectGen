@@ -43,7 +43,7 @@
                     
                     <ListBox ItemsSource="{Binding Presets}" 
                              SelectedItem="{Binding SelectedPreset}"
-                             Background="Transparent" BorderThickness="0">
+                             Style="{StaticResource ModernListBoxStyle}">
                         <ListBox.ItemTemplate>
                             <DataTemplate>
                                 <StackPanel Margin="4,8">

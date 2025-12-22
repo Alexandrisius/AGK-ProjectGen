@@ -147,6 +147,27 @@ public class ProjectUpdaterTests : IDisposable
         Assert.Equal(NodeOperation.Create, plan[1].Operation);  // Child doesn't exist
     }
 
+    [Fact]
+    public void CreateDiffPlan_WithAclChanges_SetsUpdateAclOperation()
+    {
+        // Arrange - папка существует и имеет изменённые ACL
+        _fakeFs.ExistingPaths.Add(_testRootPath);
+        var root = new GeneratedNode
+        {
+            NodeTypeId = "ProjectRoot",
+            Name = "Root",
+            FullPath = _testRootPath,
+            HasAclChanges = true
+        };
+
+        // Act
+        var plan = _updater.CreateDiffPlan(root, _testRootPath, new ProfileSchema());
+
+        // Assert
+        Assert.Single(plan);
+        Assert.Equal(NodeOperation.UpdateAcl, plan[0].Operation);
+    }
+
     #endregion
 
     #region ExecutePlanAsync Tests

@@ -150,7 +150,8 @@ public partial class AclPresetDialogViewModel : ObservableObject
         
         if (dialog.ShowDialog() == true && dialog.DialogResultOk)
         {
-            // Правила обновлены напрямую в коллекции SelectedPreset.Rules
+            // Применяем изменения - переносим из копии в оригинальную коллекцию
+            viewModel.ApplyChanges();
             OnPropertyChanged(nameof(SelectedPreset));
         }
     }

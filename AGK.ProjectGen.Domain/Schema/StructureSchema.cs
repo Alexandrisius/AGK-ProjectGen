@@ -15,8 +15,28 @@ public class StructureSchema
 public class StructureNodeDefinition : INotifyPropertyChanged
 {
     public string Id { get; set; } = Guid.NewGuid().ToString(); // Unique ID in schema
-    public string NodeTypeId { get; set; } = string.Empty; // Ref to NodeTypeSchema
     
+    private string _nodeTypeId = string.Empty;
+    public string NodeTypeId 
+    { 
+        get => _nodeTypeId;
+        set
+        {
+            // Защита: не позволяем биндингу затирать значение пустым при смене профиля
+            // Если текущее значение непустое, а новое пустое — игнорируем
+            if (string.IsNullOrEmpty(value) && !string.IsNullOrEmpty(_nodeTypeId))
+            {
+                return;
+            }
+            
+            if (_nodeTypeId != value)
+            {
+                _nodeTypeId = value ?? string.Empty;
+                OnPropertyChanged();
+            }
+        }
+    }
+
     /// <summary>
     /// Если true — узел является корнем структуры и не может быть удалён.
     /// </summary>

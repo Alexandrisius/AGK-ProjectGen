@@ -37,8 +37,8 @@ public partial class ProfileViewModel
         
         if (dialog.ShowDialog() == true && dialog.DialogResultOk)
         {
-            // Правила уже изменены в коллекции SelectedStructureNode.AclRules
-            // т.к. мы передали ссылку на коллекцию
+            // Применяем изменения - переносим из копии в оригинальную коллекцию
+            viewModel.ApplyChanges();
         }
     }
 }
