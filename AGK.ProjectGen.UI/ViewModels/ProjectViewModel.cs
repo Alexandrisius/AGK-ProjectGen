@@ -450,36 +450,11 @@ public partial class ProjectViewModel : ObservableObject
     {
         foreach (var node in nodes)
         {
-            if (!string.IsNullOrEmpty(node.SourceKey))
+            if (!string.IsNullOrEmpty(node.SourceKey) && node.Multiplicity != Domain.Enums.MultiplicitySource.Single)
             {
                 sourceKeys.Add(node.SourceKey);
             }
             CollectAllSourceKeys(node.Children, sourceKeys);
-        }
-    }
-
-    /// <summary>
-    /// Рекурсивно собирает все SourceKey из структуры профиля,
-    /// разделяя их на словарные (Dictionary) и табличные (Table).
-    /// </summary>
-    private void CollectSourceKeys(IEnumerable<StructureNodeDefinition> nodes, 
-                                   HashSet<string> dictionarySources, 
-                                   HashSet<string> tableSources)
-    {
-        foreach (var node in nodes)
-        {
-            if (!string.IsNullOrEmpty(node.SourceKey))
-            {
-                if (node.Multiplicity == Domain.Enums.MultiplicitySource.Dictionary)
-                {
-                    dictionarySources.Add(node.SourceKey);
-                }
-                else if (node.Multiplicity == Domain.Enums.MultiplicitySource.Table)
-                {
-                    tableSources.Add(node.SourceKey);
-                }
-            }
-            CollectSourceKeys(node.Children, dictionarySources, tableSources);
         }
     }
 
