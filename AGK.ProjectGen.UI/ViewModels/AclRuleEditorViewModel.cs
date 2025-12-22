@@ -29,6 +29,9 @@ public partial class AclRuleEditorViewModel : ObservableObject
     private AclConditionViewModel? _selectedCondition;
     
     [ObservableProperty]
+    private SecurityPrincipal? _selectedPrincipal;
+    
+    [ObservableProperty]
     private string _customPrincipalName = string.Empty;
     
     [ObservableProperty]
@@ -138,6 +141,9 @@ public partial class AclRuleEditorViewModel : ObservableObject
     {
         var principals = await _principalRepository.GetAllPrincipalsAsync();
         AvailablePrincipals = new ObservableCollection<SecurityPrincipal>(principals);
+        
+        // После обновления коллекции восстанавливаем выбор
+        UpdateSelectedPrincipal();
     }
     
     partial void OnSelectedRuleChanged(AclRuleDefinition? value)
@@ -149,7 +155,39 @@ public partial class AclRuleEditorViewModel : ObservableObject
             {
                 CurrentConditions.Add(new AclConditionViewModel(condition));
             }
+            
+            // Синхронизируем SelectedPrincipal с PrincipalIdentity текущего правила
+            UpdateSelectedPrincipal();
         }
+        else
+        {
+            SelectedPrincipal = null;
+        }
+    }
+    
+    partial void OnSelectedPrincipalChanged(SecurityPrincipal? value)
+    {
+        // При изменении выбора в ComboBox обновляем PrincipalIdentity правила
+        if (SelectedRule != null && value != null)
+        {
+            SelectedRule.PrincipalIdentity = value.FullName;
+        }
+    }
+    
+    /// <summary>
+    /// Находит и устанавливает SelectedPrincipal на основе PrincipalIdentity текущего правила.
+    /// </summary>
+    private void UpdateSelectedPrincipal()
+    {
+        if (SelectedRule == null || string.IsNullOrEmpty(SelectedRule.PrincipalIdentity))
+        {
+            SelectedPrincipal = null;
+            return;
+        }
+        
+        // Ищем principal по FullName
+        SelectedPrincipal = AvailablePrincipals.FirstOrDefault(p => 
+            p.FullName.Equals(SelectedRule.PrincipalIdentity, StringComparison.OrdinalIgnoreCase));
     }
     
     [RelayCommand]

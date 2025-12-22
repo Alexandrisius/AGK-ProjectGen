@@ -43,8 +43,33 @@ public class StructureNodeDefinition : INotifyPropertyChanged
     public bool IsRoot { get; set; } = false;
     
     // Multiplicity source
-    public MultiplicitySource Multiplicity { get; set; } = MultiplicitySource.Single;
-    public string? SourceKey { get; set; } // e.g. "Stages" (Dictionary) or "Buildings" (Table)
+    private MultiplicitySource _multiplicity = MultiplicitySource.Single;
+    public MultiplicitySource Multiplicity
+    {
+        get => _multiplicity;
+        set
+        {
+            if (_multiplicity != value)
+            {
+                _multiplicity = value;
+                OnPropertyChanged();
+            }
+        }
+    }
+
+    private string? _sourceKey;
+    public string? SourceKey // e.g. "Stages" (Dictionary) or "Buildings" (Table)
+    {
+        get => _sourceKey;
+        set
+        {
+            if (_sourceKey != value)
+            {
+                _sourceKey = value;
+                OnPropertyChanged();
+            }
+        }
+    }
     
     /// <summary>
     /// Для узлов с Multiplicity=Single: код выбранного элемента словаря.

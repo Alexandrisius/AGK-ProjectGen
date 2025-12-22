@@ -18,6 +18,7 @@ public partial class ProjectViewModel : ObservableObject
     private readonly IProjectManagerService _projectManagerService;
     private readonly INamingEngine _namingEngine;
     private readonly IAclService _aclService;
+    private readonly IAclFormulaEngine _aclFormulaEngine;
     private readonly IDialogService _dialogService;
     private readonly ISecurityPrincipalRepository _securityPrincipalRepository;
 
@@ -126,6 +127,7 @@ public partial class ProjectViewModel : ObservableObject
         IProjectManagerService projectManagerService,
         INamingEngine namingEngine,
         IAclService aclService,
+        IAclFormulaEngine aclFormulaEngine,
         IDialogService dialogService,
         ISecurityPrincipalRepository securityPrincipalRepository)
     {
@@ -133,6 +135,7 @@ public partial class ProjectViewModel : ObservableObject
         _projectManagerService = projectManagerService;
         _namingEngine = namingEngine;
         _aclService = aclService;
+        _aclFormulaEngine = aclFormulaEngine;
         _dialogService = dialogService;
         _securityPrincipalRepository = securityPrincipalRepository;
 
@@ -567,7 +570,8 @@ public partial class ProjectViewModel : ObservableObject
         {
             NodeTypeId = rootDef?.NodeTypeId ?? "ProjectRoot",
             NameFormula = formula,
-            IsRoot = true
+            IsRoot = true,
+            StructureDefinitionId = rootDef?.Id
         };
         
         // Добавляем атрибуты проекта в контекст корня
@@ -580,6 +584,9 @@ public partial class ProjectViewModel : ObservableObject
         var context = rootNode.ContextAttributes.ToDictionary(k => k.Key, v => v.Value?.ToString() ?? "");
         rootNode.Name = _namingEngine.ApplyFormula(formula, context);
         rootNode.FullPath = Path.Combine(project.RootPath, rootNode.Name);
+        
+        // Рассчитываем ACL-правила для корневого узла
+        rootNode.PlannedAcl = _aclFormulaEngine.CalculateAclRules(rootNode, rootDef, profile);
 
         // Рекурсивно генерируем структуру от дочерних узлов корня
         if (rootDef != null)
@@ -646,8 +653,12 @@ public partial class ProjectViewModel : ObservableObject
                 Name = nodeName,
                 FullPath = Path.Combine(parent.FullPath, nodeName),
                 NameFormula = formula,
-                ContextAttributes = nodeContext
+                ContextAttributes = nodeContext,
+                StructureDefinitionId = definition.Id
             };
+            
+            // Рассчитываем ACL-правила для отображения в превью
+            node.PlannedAcl = _aclFormulaEngine.CalculateAclRules(node, definition, profile);
 
             parent.Children.Add(node);
 
@@ -709,6 +720,9 @@ public partial class ProjectViewModel : ObservableObject
                 ContextAttributes = nodeContext,
                 StructureDefinitionId = definition.Id
             };
+            
+            // Рассчитываем ACL-правила для отображения в превью
+            node.PlannedAcl = _aclFormulaEngine.CalculateAclRules(node, definition, profile);
 
             parent.Children.Add(node);
 
