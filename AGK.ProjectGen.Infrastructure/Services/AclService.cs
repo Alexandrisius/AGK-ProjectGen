@@ -70,11 +70,15 @@ public class AclService : IAclService
                 var rights = MapRights(rule.Rights);
                 var type = rule.IsDeny ? AccessControlType.Deny : AccessControlType.Allow;
                 
-                // Typical simplified rule for containers: ContainerInherit + ObjectInherit
+                // Inheritance based on user selection
+                InheritanceFlags inheritanceFlags = rule.ApplyToChildren 
+                    ? (InheritanceFlags.ContainerInherit | InheritanceFlags.ObjectInherit) 
+                    : InheritanceFlags.None;
+
                 var fsRule = new FileSystemAccessRule(
                     identity, 
                     rights, 
-                    InheritanceFlags.ContainerInherit | InheritanceFlags.ObjectInherit, 
+                    inheritanceFlags, 
                     PropagationFlags.None, 
                     type);
 
@@ -107,7 +111,8 @@ public class AclService : IAclService
             {
                 Identity = rule.IdentityReference.Value,
                 Rights = MapFsRights(rule.FileSystemRights),
-                IsDeny = rule.AccessControlType == AccessControlType.Deny
+                IsDeny = rule.AccessControlType == AccessControlType.Deny,
+                ApplyToChildren = (rule.InheritanceFlags & (InheritanceFlags.ContainerInherit | InheritanceFlags.ObjectInherit)) != 0
             });
         }
         return result;

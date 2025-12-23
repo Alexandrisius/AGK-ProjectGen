@@ -58,6 +58,7 @@ public class AclPreset
                     PrincipalIdentity = r.PrincipalIdentity,
                     Rights = r.Rights,
                     IsDeny = r.IsDeny,
+                    ApplyToChildren = r.ApplyToChildren,
                     Description = r.Description,
                     Conditions = new List<AclCondition>(
                         r.Conditions.Select(c => new AclCondition
@@ -84,6 +85,7 @@ public class AclPreset
                 PrincipalIdentity = r.PrincipalIdentity,
                 Rights = r.Rights,
                 IsDeny = r.IsDeny,
+                ApplyToChildren = r.ApplyToChildren,
                 Description = r.Description,
                 Conditions = new List<AclCondition>(
                     r.Conditions.Select(c => new AclCondition

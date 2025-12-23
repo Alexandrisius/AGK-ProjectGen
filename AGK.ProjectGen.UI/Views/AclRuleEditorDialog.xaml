@@ -194,7 +194,8 @@
                                   SelectedItem="{Binding SelectedRule.Rights}"
                                   Style="{StaticResource ModernComboBoxStyle}" Margin="0,0,0,8"/>
                         
-                        <CheckBox Content="Запретить (Deny)" IsChecked="{Binding SelectedRule.IsDeny}" Margin="0,0,0,16"/>
+                        <CheckBox Content="Запретить (Deny)" IsChecked="{Binding SelectedRule.IsDeny}" Margin="0,0,0,8"/>
+                        <CheckBox Content="Наследовать права (для дочерних папок)" IsChecked="{Binding SelectedRule.ApplyToChildren}" Margin="0,0,0,16"/>
                         
                         <!-- Conditions -->
                         <TextBlock Text="Условия применения" Style="{StaticResource H3Style}" Margin="0,0,0,8"/>

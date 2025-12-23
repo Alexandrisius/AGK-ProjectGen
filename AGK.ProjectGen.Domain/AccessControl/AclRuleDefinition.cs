@@ -31,7 +31,15 @@ public class AclRuleDefinition
     /// <summary>
     /// Если true — это запрещающее правило (Deny), иначе разрешающее (Allow).
     /// </summary>
+    /// <summary>
+    /// Если true — это запрещающее правило (Deny), иначе разрешающее (Allow).
+    /// </summary>
     public bool IsDeny { get; set; }
+
+    /// <summary>
+    /// Применять ли правило к дочерним объектам (наследование).
+    /// </summary>
+    public bool ApplyToChildren { get; set; } = true;
     
     /// <summary>
     /// Описание правила (для отображения в UI).
