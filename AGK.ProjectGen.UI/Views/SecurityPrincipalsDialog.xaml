@@ -1,7 +1,7 @@
 <Window x:Class="AGK.ProjectGen.UI.Views.SecurityPrincipalsDialog"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="👥 Управление группами и пользователями" Height="700" Width="1000"
+        Title="👥 Управление группами и пользователями" Height="800" Width="1100"
         WindowStartupLocation="CenterOwner"
         Background="{StaticResource BgPrimaryBrush}">
     
@@ -16,7 +16,7 @@
         <!-- Header -->
         <StackPanel Grid.Row="0" Margin="0,0,0,16">
             <TextBlock Text="Группы и пользователи для ACL" Style="{StaticResource H2Style}"/>
-            <TextBlock Text="Управляйте списком групп безопасности, которые можно использовать в правилах доступа" 
+            <TextBlock Text="Формируйте «белый список» субъектов безопасности, которые можно использовать при назначении прав доступа" 
                        Style="{StaticResource LabelStyle}" Margin="0,4,0,0" TextWrapping="Wrap"/>
         </StackPanel>
         
@@ -34,15 +34,16 @@
                 </StackPanel>
                 
                 <StackPanel Grid.Column="1" Orientation="Horizontal">
-                    <Button Content="🔄 Импорт из AD" Padding="14,8" 
-                            Style="{StaticResource PrimaryButtonStyle}"
-                            Command="{Binding ImportFromAdCommand}"
-                            ToolTip="Импортировать группы из Active Directory (домен)"
-                            IsEnabled="{Binding IsAdAvailable}"/>
-                    <Button Content="💻 Локальные группы" Padding="14,8" Margin="8,0,0,0"
+                    <Button Content="👥 Импорт всех групп" Padding="14,8" 
                             Style="{StaticResource SecondaryButtonStyle}"
-                            Command="{Binding ImportFromLocalCommand}"
-                            ToolTip="Импортировать группы с локальной машины"/>
+                            Command="{Binding ImportAllGroupsCommand}"
+                            ToolTip="⚠️ Импортирует ВСЕ группы из AD (не рекомендуется)"
+                            IsEnabled="{Binding IsAdAvailable}"/>
+                    <Button Content="👤 Импорт всех пользователей" Padding="14,8" Margin="8,0,0,0"
+                            Style="{StaticResource SecondaryButtonStyle}"
+                            Command="{Binding ImportAllUsersCommand}"
+                            ToolTip="⚠️ Импортирует ВСЕХ пользователей из AD (не рекомендуется)"
+                            IsEnabled="{Binding IsAdAvailable}"/>
                     <Button Content="➕ Добавить вручную" Padding="14,8" Margin="8,0,0,0"
                             Style="{StaticResource SecondaryButtonStyle}"
                             Command="{Binding AddManualCommand}"
@@ -58,29 +59,96 @@
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
             
-            <!-- Groups List -->
+            <!-- Groups List with Search -->
             <Border Grid.Column="0" Background="{StaticResource BgSecondaryBrush}" 
                     CornerRadius="8" Padding="12" Margin="0,0,8,0">
                 <DockPanel>
-                    <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,0,0,12">
-                        <TextBlock Text="👥 Группы" Style="{StaticResource H3Style}"/>
-                        <TextBlock Text="{Binding Groups.Count, StringFormat=' ({0})'}" 
-                                   Style="{StaticResource LabelStyle}" VerticalAlignment="Bottom" Margin="4,0,0,2"/>
-                        <Button Content="🗑️" Padding="6,4" Margin="12,0,0,0"
-                                Style="{StaticResource SecondaryButtonStyle}"
-                                Command="{Binding RemoveGroupCommand}"
-                                ToolTip="Удалить выбранную группу"/>
+                    <StackPanel DockPanel.Dock="Top" Margin="0,0,0,12">
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                            <TextBlock Text="👥 Группы" Style="{StaticResource H3Style}"/>
+                            <TextBlock Text="{Binding Groups.Count, StringFormat=' ({0})'}" 
+                                       Style="{StaticResource LabelStyle}" VerticalAlignment="Bottom" Margin="4,0,0,2"/>
+                            <Button Content="🗑️ Удалить выбранные" Padding="8,4" Margin="12,0,0,0"
+                                    Style="{StaticResource SecondaryButtonStyle}"
+                                    Command="{Binding RemoveSelectedGroupsCommand}"
+                                    CommandParameter="{Binding SelectedItems, ElementName=GroupsDataGrid}"
+                                    ToolTip="Удалить выбранные группы (Ctrl+Click для множественного выбора)"/>
+                        </StackPanel>
+                        
+                        <!-- Group Search Panel -->
+                        <Border Background="{StaticResource BgPrimaryBrush}" CornerRadius="6" Padding="8">
+                            <StackPanel>
+                                <TextBlock Text="🔍 Поиск групп в AD" FontWeight="SemiBold" Margin="0,0,0,6"/>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBox Grid.Column="0" 
+                                             Text="{Binding GroupSearchQuery, UpdateSourceTrigger=PropertyChanged}"
+                                             Style="{StaticResource ModernTextBoxStyle}"
+                                             Padding="8,6"
+                                             ToolTip="Введите часть названия группы (минимум 2 символа)">
+                                        <TextBox.InputBindings>
+                                            <KeyBinding Key="Enter" Command="{Binding SearchGroupsCommand}"/>
+                                        </TextBox.InputBindings>
+                                    </TextBox>
+                                    <Button Grid.Column="1" Content="🔍 Найти" Padding="12,6" Margin="6,0,0,0"
+                                            Style="{StaticResource PrimaryButtonStyle}"
+                                            Command="{Binding SearchGroupsCommand}"
+                                            IsEnabled="{Binding IsSearchingGroups, Converter={StaticResource InverseBoolConverter}}"/>
+                                </Grid>
+                                
+                                <!-- Group Search Results -->
+                                <Border Visibility="{Binding GroupSearchResults.Count, Converter={StaticResource CountToVisibilityConverter}}"
+                                        BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" 
+                                        CornerRadius="4" Margin="0,8,0,0" MaxHeight="120">
+                                    <DockPanel>
+                                        <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="6,6,6,4">
+                                            <TextBlock Text="{Binding GroupSearchResults.Count, StringFormat='Найдено: {0}'}" 
+                                                       Style="{StaticResource LabelStyle}"/>
+                                            <Button Content="➕" Padding="8,4" Margin="12,0,0,0"
+                                                    Style="{StaticResource PrimaryButtonStyle}"
+                                                    Command="{Binding AddGroupFromSearchCommand}"
+                                                    ToolTip="Добавить выбранную группу"/>
+                                            <Button Content="➕ Всех" Padding="8,4" Margin="6,0,0,0"
+                                                    Style="{StaticResource SecondaryButtonStyle}"
+                                                    Command="{Binding AddAllGroupsFromSearchCommand}"
+                                                    ToolTip="Добавить все найденные группы"/>
+                                        </StackPanel>
+                                        <ListBox ItemsSource="{Binding GroupSearchResults}"
+                                                 SelectedItem="{Binding SelectedGroupSearchResult}"
+                                                 MaxHeight="80" Margin="4,0,4,4"
+                                                 Background="Transparent"
+                                                 BorderThickness="0">
+                                            <ListBox.ItemTemplate>
+                                                <DataTemplate>
+                                                    <StackPanel Orientation="Horizontal" Margin="2">
+                                                        <TextBlock Text="{Binding Name}" FontWeight="SemiBold"/>
+                                                        <TextBlock Text="{Binding Description, StringFormat=' — {0}'}" 
+                                                                   Style="{StaticResource LabelStyle}" Margin="4,0,0,0"/>
+                                                    </StackPanel>
+                                                </DataTemplate>
+                                            </ListBox.ItemTemplate>
+                                        </ListBox>
+                                    </DockPanel>
+                                </Border>
+                            </StackPanel>
+                        </Border>
                     </StackPanel>
                     
-                    <DataGrid ItemsSource="{Binding Groups}" 
-                              SelectedItem="{Binding SelectedGroup}"
+                    <DataGrid x:Name="GroupsDataGrid"
+                              ItemsSource="{Binding Groups}" 
                               Style="{StaticResource ModernDataGridStyle}"
-                              RowHeight="40" IsReadOnly="True"
-                              AutoGenerateColumns="False">
+                              RowHeight="40"
+                              IsReadOnly="False"
+                              AutoGenerateColumns="False"
+                              SelectionMode="Extended"
+                              CellEditEnding="DataGrid_CellEditEnding">
                         <DataGrid.Columns>
-                            <DataGridTextColumn Header="Имя" Binding="{Binding Name}" Width="*"/>
-                            <DataGridTextColumn Header="Домен" Binding="{Binding Domain}" Width="100"/>
-                            <DataGridTextColumn Header="Описание" Binding="{Binding Description}" Width="*"/>
+                            <DataGridTextColumn Header="Имя" Binding="{Binding Name}" Width="*" IsReadOnly="True"/>
+                            <DataGridTextColumn Header="Домен" Binding="{Binding Domain}" Width="100" IsReadOnly="True"/>
+                            <DataGridTextColumn Header="Описание" Binding="{Binding Description, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Width="*"/>
                         </DataGrid.Columns>
                     </DataGrid>
                 </DockPanel>
@@ -95,16 +163,17 @@
                             <TextBlock Text="👤 Пользователи" Style="{StaticResource H3Style}"/>
                             <TextBlock Text="{Binding Users.Count, StringFormat=' ({0})'}" 
                                        Style="{StaticResource LabelStyle}" VerticalAlignment="Bottom" Margin="4,0,0,2"/>
-                            <Button Content="🗑️" Padding="6,4" Margin="12,0,0,0"
+                            <Button Content="🗑️ Удалить выбранных" Padding="8,4" Margin="12,0,0,0"
                                     Style="{StaticResource SecondaryButtonStyle}"
-                                    Command="{Binding RemoveUserCommand}"
-                                    ToolTip="Удалить выбранного пользователя"/>
+                                    Command="{Binding RemoveSelectedUsersCommand}"
+                                    CommandParameter="{Binding SelectedItems, ElementName=UsersDataGrid}"
+                                    ToolTip="Удалить выбранных пользователей (Ctrl+Click для множественного выбора)"/>
                         </StackPanel>
                         
-                        <!-- Search Panel -->
+                        <!-- User Search Panel -->
                         <Border Background="{StaticResource BgPrimaryBrush}" CornerRadius="6" Padding="8">
                             <StackPanel>
-                                <TextBlock Text="🔍 Поиск пользователей" FontWeight="SemiBold" Margin="0,0,0,6"/>
+                                <TextBlock Text="🔍 Поиск пользователей в AD" FontWeight="SemiBold" Margin="0,0,0,6"/>
                                 <Grid>
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*"/>
@@ -122,29 +191,29 @@
                                     <Button Grid.Column="1" Content="🔍 Найти" Padding="12,6" Margin="6,0,0,0"
                                             Style="{StaticResource PrimaryButtonStyle}"
                                             Command="{Binding SearchUsersCommand}"
-                                            IsEnabled="{Binding IsSearching, Converter={StaticResource InverseBoolConverter}}"/>
+                                            IsEnabled="{Binding IsSearchingUsers, Converter={StaticResource InverseBoolConverter}}"/>
                                 </Grid>
                                 
-                                <!-- Search Results -->
-                                <Border Visibility="{Binding SearchResults.Count, Converter={StaticResource CountToVisibilityConverter}}"
+                                <!-- User Search Results -->
+                                <Border Visibility="{Binding UserSearchResults.Count, Converter={StaticResource CountToVisibilityConverter}}"
                                         BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" 
-                                        CornerRadius="4" Margin="0,8,0,0" MaxHeight="150">
+                                        CornerRadius="4" Margin="0,8,0,0" MaxHeight="120">
                                     <DockPanel>
                                         <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="6,6,6,4">
-                                            <TextBlock Text="{Binding SearchResults.Count, StringFormat='Найдено: {0}'}" 
+                                            <TextBlock Text="{Binding UserSearchResults.Count, StringFormat='Найдено: {0}'}" 
                                                        Style="{StaticResource LabelStyle}"/>
-                                            <Button Content="➕ Добавить" Padding="8,4" Margin="12,0,0,0"
+                                            <Button Content="➕" Padding="8,4" Margin="12,0,0,0"
                                                     Style="{StaticResource PrimaryButtonStyle}"
-                                                    Command="{Binding AddFromSearchCommand}"
+                                                    Command="{Binding AddUserFromSearchCommand}"
                                                     ToolTip="Добавить выбранного пользователя"/>
                                             <Button Content="➕ Всех" Padding="8,4" Margin="6,0,0,0"
                                                     Style="{StaticResource SecondaryButtonStyle}"
-                                                    Command="{Binding AddAllFromSearchCommand}"
+                                                    Command="{Binding AddAllUsersFromSearchCommand}"
                                                     ToolTip="Добавить всех найденных"/>
                                         </StackPanel>
-                                        <ListBox ItemsSource="{Binding SearchResults}"
-                                                 SelectedItem="{Binding SelectedSearchResult}"
-                                                 MaxHeight="100" Margin="4,0,4,4"
+                                        <ListBox ItemsSource="{Binding UserSearchResults}"
+                                                 SelectedItem="{Binding SelectedUserSearchResult}"
+                                                 MaxHeight="80" Margin="4,0,4,4"
                                                  Background="Transparent"
                                                  BorderThickness="0">
                                             <ListBox.ItemTemplate>
@@ -163,15 +232,18 @@
                         </Border>
                     </StackPanel>
                     
-                    <DataGrid ItemsSource="{Binding Users}" 
-                              SelectedItem="{Binding SelectedUser}"
+                    <DataGrid x:Name="UsersDataGrid"
+                              ItemsSource="{Binding Users}" 
                               Style="{StaticResource ModernDataGridStyle}"
-                              RowHeight="40" IsReadOnly="True"
-                              AutoGenerateColumns="False">
+                              RowHeight="40"
+                              IsReadOnly="False"
+                              AutoGenerateColumns="False"
+                              SelectionMode="Extended"
+                              CellEditEnding="DataGrid_CellEditEnding">
                         <DataGrid.Columns>
-                            <DataGridTextColumn Header="Имя" Binding="{Binding Name}" Width="*"/>
-                            <DataGridTextColumn Header="Домен" Binding="{Binding Domain}" Width="100"/>
-                            <DataGridTextColumn Header="Описание" Binding="{Binding Description}" Width="*"/>
+                            <DataGridTextColumn Header="Имя" Binding="{Binding Name}" Width="*" IsReadOnly="True"/>
+                            <DataGridTextColumn Header="Домен" Binding="{Binding Domain}" Width="100" IsReadOnly="True"/>
+                            <DataGridTextColumn Header="Описание" Binding="{Binding Description, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Width="*"/>
                         </DataGrid.Columns>
                     </DataGrid>
                 </DockPanel>

@@ -32,7 +32,9 @@ public partial class AddPrincipalDialog : Window
             Name = name,
             Domain = string.IsNullOrWhiteSpace(DomainTextBox.Text) ? null : DomainTextBox.Text.Trim(),
             Type = GroupRadio.IsChecked == true ? SecurityPrincipalType.Group : SecurityPrincipalType.User,
-            Description = $"Добавлено вручную"
+            Description = string.IsNullOrWhiteSpace(DescriptionTextBox.Text) 
+                ? "Добавлено вручную" 
+                : DescriptionTextBox.Text.Trim()
         };
         
         DialogResult = true;

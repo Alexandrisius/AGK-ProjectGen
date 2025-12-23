@@ -129,9 +129,9 @@ public class SecurityPrincipalRepository : ISecurityPrincipalRepository
     }
     
     /// <summary>
-    /// Импортирует группы и пользователей с локальной машины.
+    /// Импортирует пользователей из Active Directory.
     /// </summary>
-    public Task<List<SecurityPrincipal>> ImportFromLocalMachineAsync()
+    public Task<List<SecurityPrincipal>> ImportUsersFromActiveDirectoryAsync()
     {
         return Task.Run(() =>
         {
@@ -139,28 +139,12 @@ public class SecurityPrincipalRepository : ISecurityPrincipalRepository
             
             try
             {
-                using var context = new PrincipalContext(ContextType.Machine);
-                var machineName = Environment.MachineName;
+                using var context = new PrincipalContext(ContextType.Domain);
+                var domainName = Environment.UserDomainName;
                 
-                // Локальные группы
-                using var groupSearcher = new PrincipalSearcher(new GroupPrincipal(context));
-                foreach (var principal in groupSearcher.FindAll())
-                {
-                    if (principal is GroupPrincipal group)
-                    {
-                        result.Add(new SecurityPrincipal
-                        {
-                            Name = group.Name ?? string.Empty,
-                            Domain = machineName,
-                            Description = group.Description ?? string.Empty,
-                            Type = SecurityPrincipalType.Group
-                        });
-                    }
-                }
+                using var searcher = new PrincipalSearcher(new UserPrincipal(context));
                 
-                // Локальные пользователи
-                using var userSearcher = new PrincipalSearcher(new UserPrincipal(context));
-                foreach (var principal in userSearcher.FindAll())
+                foreach (var principal in searcher.FindAll())
                 {
                     if (principal is UserPrincipal user)
                     {
@@ -169,9 +153,9 @@ public class SecurityPrincipalRepository : ISecurityPrincipalRepository
                         
                         result.Add(new SecurityPrincipal
                         {
-                            Name = user.Name ?? string.Empty,
-                            Domain = machineName,
-                            Description = user.Description ?? $"{user.DisplayName}",
+                            Name = user.SamAccountName ?? user.Name ?? string.Empty,
+                            Domain = domainName,
+                            Description = BuildDescription(user),
                             Type = SecurityPrincipalType.User
                         });
                     }
@@ -179,7 +163,7 @@ public class SecurityPrincipalRepository : ISecurityPrincipalRepository
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Local machine import failed: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"AD users import failed: {ex.Message}");
             }
             
             return result;
@@ -277,7 +261,7 @@ public class SecurityPrincipalRepository : ISecurityPrincipalRepository
     }
     
     /// <summary>
-    /// Умный поиск пользователей по части имени, логина или фамилии.
+    /// Умный поиск пользователей в Active Directory по части имени, логина или фамилии.
     /// Поддерживает поиск по нескольким словам (например "Климов Алекс" найдёт "Климович Александр").
     /// Регистронезависимый.
     /// </summary>
@@ -300,87 +284,116 @@ public class SecurityPrincipalRepository : ISecurityPrincipalRepository
             if (queryParts.Length == 0)
                 return result;
             
-            // Собираем всех пользователей из доступных источников
-            var allUsers = new List<(UserPrincipal User, string Label)>();
-            
-            // Пробуем сначала домен (если доступен), потом локальную машину
-            var contextsToTry = new List<(ContextType Type, string Label)>();
-            
-            // Проверяем доступность домена
             try
             {
-                using var testContext = new PrincipalContext(ContextType.Domain);
-                contextsToTry.Add((ContextType.Domain, Environment.UserDomainName));
-            }
-            catch
-            {
-                // Домен недоступен — не добавляем
-            }
-            
-            // Всегда добавляем локальную машину (для Windows Server с локальными учётками)
-            contextsToTry.Add((ContextType.Machine, Environment.MachineName));
-            
-            foreach (var (contextType, label) in contextsToTry)
-            {
-                try
+                using var context = new PrincipalContext(ContextType.Domain);
+                var domainName = Environment.UserDomainName;
+                
+                using var searcher = new PrincipalSearcher(new UserPrincipal(context));
+                
+                foreach (var principal in searcher.FindAll())
                 {
-                    using var context = new PrincipalContext(contextType);
-                    using var userPrincipal = new UserPrincipal(context);
-                    using var searcher = new PrincipalSearcher(userPrincipal);
-                    
-                    foreach (var principal in searcher.FindAll())
+                    if (principal is UserPrincipal user)
                     {
-                        if (principal is UserPrincipal user)
+                        if (IsSystemUser(user.Name)) continue;
+                        
+                        // Собираем все текстовые поля для поиска
+                        var searchableText = string.Join(" ",
+                            user.SamAccountName ?? "",
+                            user.DisplayName ?? "",
+                            user.Name ?? "",
+                            user.Description ?? "",
+                            user.GivenName ?? "",
+                            user.Surname ?? ""
+                        ).ToLowerInvariant();
+                        
+                        // Проверяем, что ВСЕ части запроса найдены в тексте
+                        if (queryParts.All(part => searchableText.Contains(part)))
                         {
-                            if (IsSystemUser(user.Name)) continue;
-                            
-                            // Собираем все текстовые поля для поиска
-                            var searchableText = string.Join(" ",
-                                user.SamAccountName ?? "",
-                                user.DisplayName ?? "",
-                                user.Name ?? "",
-                                user.Description ?? "",
-                                user.GivenName ?? "",      // Имя
-                                user.Surname ?? ""         // Фамилия
-                            ).ToLowerInvariant();
-                            
-                            // Проверяем, что ВСЕ части запроса найдены в тексте
-                            bool allPartsMatch = queryParts.All(part => searchableText.Contains(part));
-                            
-                            if (allPartsMatch)
+                            result.Add(new SecurityPrincipal
                             {
-                                // Проверяем дубликаты
-                                var fullName = $"{label}\\{user.SamAccountName ?? user.Name}";
-                                if (result.Any(r => r.FullName.Equals(fullName, StringComparison.OrdinalIgnoreCase)))
-                                    continue;
-                                
-                                result.Add(new SecurityPrincipal
-                                {
-                                    Name = user.SamAccountName ?? user.Name ?? string.Empty,
-                                    Domain = label,
-                                    Description = BuildDescription(user),
-                                    Type = SecurityPrincipalType.User
-                                });
-                                
-                                // Ограничиваем результаты
-                                if (result.Count >= 50) break;
-                            }
+                                Name = user.SamAccountName ?? user.Name ?? string.Empty,
+                                Domain = domainName,
+                                Description = BuildDescription(user),
+                                Type = SecurityPrincipalType.User
+                            });
+                            
+                            if (result.Count >= 50) break;
                         }
                     }
                 }
-                catch (Exception ex)
-                {
-                    System.Diagnostics.Debug.WriteLine($"Search in {contextType} failed: {ex.Message}");
-                }
-                
-                if (result.Count >= 50) break;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"AD user search failed: {ex.Message}");
             }
             
-            // Сортируем по релевантности: сначала точные совпадения с началом
+            // Сортируем по релевантности
             return result
                 .OrderByDescending(r => queryParts.Any(p => 
                     r.Name.StartsWith(p, StringComparison.OrdinalIgnoreCase) ||
                     r.Description.StartsWith(p, StringComparison.OrdinalIgnoreCase)))
+                .ThenBy(r => r.Name)
+                .Take(50)
+                .ToList();
+        });
+    }
+    
+    /// <summary>
+    /// Умный поиск групп в Active Directory по части имени.
+    /// Регистронезависимый.
+    /// </summary>
+    public Task<List<SecurityPrincipal>> SearchGroupsInAdAsync(string query)
+    {
+        return Task.Run(() =>
+        {
+            var result = new List<SecurityPrincipal>();
+            
+            if (string.IsNullOrWhiteSpace(query) || query.Length < 2)
+                return result;
+            
+            var queryLower = query.ToLowerInvariant();
+            
+            try
+            {
+                using var context = new PrincipalContext(ContextType.Domain);
+                var domainName = Environment.UserDomainName;
+                
+                using var searcher = new PrincipalSearcher(new GroupPrincipal(context));
+                
+                foreach (var principal in searcher.FindAll())
+                {
+                    if (principal is GroupPrincipal group)
+                    {
+                        if (IsBuiltInGroup(group.Name)) continue;
+                        
+                        var searchableText = string.Join(" ",
+                            group.Name ?? "",
+                            group.Description ?? ""
+                        ).ToLowerInvariant();
+                        
+                        if (searchableText.Contains(queryLower))
+                        {
+                            result.Add(new SecurityPrincipal
+                            {
+                                Name = group.Name ?? string.Empty,
+                                Domain = domainName,
+                                Description = group.Description ?? string.Empty,
+                                Type = SecurityPrincipalType.Group
+                            });
+                            
+                            if (result.Count >= 50) break;
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"AD group search failed: {ex.Message}");
+            }
+            
+            return result
+                .OrderByDescending(r => r.Name.StartsWith(query, StringComparison.OrdinalIgnoreCase))
                 .ThenBy(r => r.Name)
                 .Take(50)
                 .ToList();

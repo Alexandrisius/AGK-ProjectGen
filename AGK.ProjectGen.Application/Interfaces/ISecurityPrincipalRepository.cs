@@ -19,9 +19,9 @@ public interface ISecurityPrincipalRepository
     Task<List<SecurityPrincipal>> ImportFromActiveDirectoryAsync();
     
     /// <summary>
-    /// Пытается получить группы из локальной машины.
+    /// Импортирует пользователей из Active Directory.
     /// </summary>
-    Task<List<SecurityPrincipal>> ImportFromLocalMachineAsync();
+    Task<List<SecurityPrincipal>> ImportUsersFromActiveDirectoryAsync();
     
     /// <summary>
     /// Проверяет доступность Active Directory.
@@ -39,5 +39,12 @@ public interface ISecurityPrincipalRepository
     /// <param name="query">Строка поиска (минимум 2 символа)</param>
     /// <returns>Список найденных пользователей (максимум 50)</returns>
     Task<List<SecurityPrincipal>> SearchUsersInAdAsync(string query);
+    
+    /// <summary>
+    /// Поиск групп в Active Directory по части имени.
+    /// </summary>
+    /// <param name="query">Строка поиска (минимум 2 символа)</param>
+    /// <returns>Список найденных групп (максимум 50)</returns>
+    Task<List<SecurityPrincipal>> SearchGroupsInAdAsync(string query);
 }
 

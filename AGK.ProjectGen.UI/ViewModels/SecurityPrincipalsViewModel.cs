@@ -19,10 +19,10 @@ public partial class SecurityPrincipalsViewModel : ObservableObject
     private ObservableCollection<SecurityPrincipal> _users = new();
     
     [ObservableProperty]
-    private SecurityPrincipal? _selectedGroup;
+    private ObservableCollection<SecurityPrincipal> _selectedGroups = new();
     
     [ObservableProperty]
-    private SecurityPrincipal? _selectedUser;
+    private ObservableCollection<SecurityPrincipal> _selectedUsers = new();
     
     [ObservableProperty]
     private string _domainStatus = "Проверка подключения...";
@@ -36,17 +36,31 @@ public partial class SecurityPrincipalsViewModel : ObservableObject
     [ObservableProperty]
     private bool _isLoading;
     
+    // Поиск пользователей
     [ObservableProperty]
     private string _userSearchQuery = "";
     
     [ObservableProperty]
-    private ObservableCollection<SecurityPrincipal> _searchResults = new();
+    private ObservableCollection<SecurityPrincipal> _userSearchResults = new();
     
     [ObservableProperty]
-    private bool _isSearching;
+    private bool _isSearchingUsers;
     
     [ObservableProperty]
-    private SecurityPrincipal? _selectedSearchResult;
+    private SecurityPrincipal? _selectedUserSearchResult;
+    
+    // Поиск групп
+    [ObservableProperty]
+    private string _groupSearchQuery = "";
+    
+    [ObservableProperty]
+    private ObservableCollection<SecurityPrincipal> _groupSearchResults = new();
+    
+    [ObservableProperty]
+    private bool _isSearchingGroups;
+    
+    [ObservableProperty]
+    private SecurityPrincipal? _selectedGroupSearchResult;
     
     private string _configPath = "";
     
@@ -61,27 +75,24 @@ public partial class SecurityPrincipalsViewModel : ObservableObject
         
         try
         {
-            // Загружаем текущую конфигурацию
             var config = await _repository.LoadAsync();
             Groups = new ObservableCollection<SecurityPrincipal>(config.Groups);
             Users = new ObservableCollection<SecurityPrincipal>(config.Users);
             
-            // Проверяем доступность AD
             var (isAvailable, domainName) = await _repository.CheckActiveDirectoryAsync();
             IsAdAvailable = isAvailable;
             
             if (isAvailable)
             {
                 DomainStatus = $"✅ Подключено к домену: {domainName}";
-                StatusMessage = "Вы можете импортировать группы из Active Directory";
+                StatusMessage = "Используйте поиск для добавления групп и пользователей из AD";
             }
             else
             {
                 DomainStatus = "⚠️ Active Directory недоступен";
-                StatusMessage = "Используйте ручной ввод или импорт локальных групп";
+                StatusMessage = "Используйте ручной ввод для добавления";
             }
             
-            // Определяем путь к конфигу
             var appDir = AppDomain.CurrentDomain.BaseDirectory;
             _configPath = System.IO.Path.Combine(appDir, "Config", "SecurityPrincipals.json");
         }
@@ -91,9 +102,44 @@ public partial class SecurityPrincipalsViewModel : ObservableObject
         }
     }
     
-    [RelayCommand]
-    private async Task ImportFromAd()
+    /// <summary>
+    /// Сохраняет текущее состояние групп и пользователей в конфиг.
+    /// Вызывается после редактирования описания.
+    /// </summary>
+    public async Task SaveChangesAsync()
     {
+        try
+        {
+            var config = new SecurityPrincipalsConfig
+            {
+                Groups = Groups.ToList(),
+                Users = Users.ToList()
+            };
+            await _repository.SaveAsync(config);
+            StatusMessage = "Изменения сохранены";
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"Ошибка сохранения: {ex.Message}";
+        }
+    }
+    
+    [RelayCommand]
+    private async Task ImportAllGroups()
+    {
+        // Предупреждение
+        var confirm = System.Windows.MessageBox.Show(
+            "⚠️ ВНИМАНИЕ!\n\n" +
+            "Импорт ВСЕХ групп из AD добавит много записей в список.\n" +
+            "В AD может быть много системных и неиспользуемых групп.\n\n" +
+            "Рекомендуется использовать ПОИСК для точечного добавления нужных групп.\n\n" +
+            "Продолжить полный импорт?",
+            "Подтверждение импорта",
+            System.Windows.MessageBoxButton.YesNo,
+            System.Windows.MessageBoxImage.Warning);
+        
+        if (confirm != System.Windows.MessageBoxResult.Yes) return;
+        
         IsLoading = true;
         StatusMessage = "Импорт групп из Active Directory...";
         
@@ -117,10 +163,8 @@ public partial class SecurityPrincipalsViewModel : ObservableObject
             
             var addedCount = await _repository.MergePrincipalsAsync(adGroups);
             
-            // Перезагружаем данные
             var config = await _repository.LoadAsync();
             Groups = new ObservableCollection<SecurityPrincipal>(config.Groups);
-            Users = new ObservableCollection<SecurityPrincipal>(config.Users);
             
             StatusMessage = $"Импортировано новых групп: {addedCount} из {adGroups.Count}";
             
@@ -129,7 +173,7 @@ public partial class SecurityPrincipalsViewModel : ObservableObject
                 $"Найдено групп в AD: {adGroups.Count}\n" +
                 $"Добавлено новых: {addedCount}\n" +
                 $"(дубликаты пропущены)",
-                "Импорт из AD",
+                "Импорт групп",
                 System.Windows.MessageBoxButton.OK,
                 System.Windows.MessageBoxImage.Information);
         }
@@ -148,39 +192,55 @@ public partial class SecurityPrincipalsViewModel : ObservableObject
     }
     
     [RelayCommand]
-    private async Task ImportFromLocal()
+    private async Task ImportAllUsers()
     {
+        // Предупреждение
+        var confirm = System.Windows.MessageBox.Show(
+            "⚠️ ВНИМАНИЕ!\n\n" +
+            "Импорт ВСЕХ пользователей из AD добавит много записей в список.\n" +
+            "В AD может быть много неактивных и системных учётных записей.\n\n" +
+            "Рекомендуется использовать ПОИСК для точечного добавления нужных пользователей.\n\n" +
+            "Продолжить полный импорт?",
+            "Подтверждение импорта",
+            System.Windows.MessageBoxButton.YesNo,
+            System.Windows.MessageBoxImage.Warning);
+        
+        if (confirm != System.Windows.MessageBoxResult.Yes) return;
+        
         IsLoading = true;
-        StatusMessage = "Импорт локальных групп и пользователей...";
+        StatusMessage = "Импорт пользователей из Active Directory...";
         
         try
         {
-            var localPrincipals = await _repository.ImportFromLocalMachineAsync();
+            var adUsers = await _repository.ImportUsersFromActiveDirectoryAsync();
             
-            if (localPrincipals.Count == 0)
+            if (adUsers.Count == 0)
             {
                 System.Windows.MessageBox.Show(
-                    "Не удалось получить локальные группы.",
+                    "Не удалось получить пользователей из Active Directory.\n\n" +
+                    "Возможные причины:\n" +
+                    "• Компьютер не в домене\n" +
+                    "• Нет прав на чтение AD\n" +
+                    "• Сетевые проблемы",
                     "Импорт не удался",
                     System.Windows.MessageBoxButton.OK,
                     System.Windows.MessageBoxImage.Warning);
                 return;
             }
             
-            var addedCount = await _repository.MergePrincipalsAsync(localPrincipals);
+            var addedCount = await _repository.MergePrincipalsAsync(adUsers);
             
-            // Перезагружаем данные
             var config = await _repository.LoadAsync();
-            Groups = new ObservableCollection<SecurityPrincipal>(config.Groups);
             Users = new ObservableCollection<SecurityPrincipal>(config.Users);
             
-            StatusMessage = $"Импортировано новых: {addedCount} из {localPrincipals.Count}";
+            StatusMessage = $"Импортировано новых пользователей: {addedCount} из {adUsers.Count}";
             
             System.Windows.MessageBox.Show(
                 $"Импорт завершён!\n\n" +
-                $"Найдено на локальной машине: {localPrincipals.Count}\n" +
-                $"Добавлено новых: {addedCount}",
-                "Импорт локальных",
+                $"Найдено пользователей в AD: {adUsers.Count}\n" +
+                $"Добавлено новых: {addedCount}\n" +
+                $"(дубликаты пропущены)",
+                "Импорт пользователей",
                 System.Windows.MessageBoxButton.OK,
                 System.Windows.MessageBoxImage.Information);
         }
@@ -229,46 +289,70 @@ public partial class SecurityPrincipalsViewModel : ObservableObject
     }
     
     [RelayCommand]
-    private async Task RemoveGroup()
+    private async Task RemoveSelectedGroups(System.Collections.IList? selectedItems)
     {
-        if (SelectedGroup == null) return;
+        if (selectedItems == null || selectedItems.Count == 0) return;
+        
+        var toRemove = selectedItems.Cast<SecurityPrincipal>().ToList();
+        var count = toRemove.Count;
+        
+        var message = count == 1 
+            ? $"Удалить группу '{toRemove[0].FullName}'?"
+            : $"Удалить выбранные группы ({count} шт.)?";
         
         var result = System.Windows.MessageBox.Show(
-            $"Удалить группу '{SelectedGroup.FullName}'?",
-            "Подтверждение",
+            message,
+            "Подтверждение удаления",
             System.Windows.MessageBoxButton.YesNo,
             System.Windows.MessageBoxImage.Question);
             
         if (result == System.Windows.MessageBoxResult.Yes)
         {
             var config = await _repository.LoadAsync();
-            config.Groups.RemoveAll(g => g.FullName == SelectedGroup.FullName);
+            var namesToRemove = toRemove.Select(g => g.FullName).ToHashSet();
+            config.Groups.RemoveAll(g => namesToRemove.Contains(g.FullName));
             await _repository.SaveAsync(config);
             
-            Groups.Remove(SelectedGroup);
-            StatusMessage = "Группа удалена";
+            foreach (var item in toRemove)
+            {
+                Groups.Remove(item);
+            }
+            
+            StatusMessage = count == 1 ? "Группа удалена" : $"Удалено групп: {count}";
         }
     }
     
     [RelayCommand]
-    private async Task RemoveUser()
+    private async Task RemoveSelectedUsers(System.Collections.IList? selectedItems)
     {
-        if (SelectedUser == null) return;
+        if (selectedItems == null || selectedItems.Count == 0) return;
+        
+        var toRemove = selectedItems.Cast<SecurityPrincipal>().ToList();
+        var count = toRemove.Count;
+        
+        var message = count == 1 
+            ? $"Удалить пользователя '{toRemove[0].FullName}'?"
+            : $"Удалить выбранных пользователей ({count} шт.)?";
         
         var result = System.Windows.MessageBox.Show(
-            $"Удалить пользователя '{SelectedUser.FullName}'?",
-            "Подтверждение",
+            message,
+            "Подтверждение удаления",
             System.Windows.MessageBoxButton.YesNo,
             System.Windows.MessageBoxImage.Question);
             
         if (result == System.Windows.MessageBoxResult.Yes)
         {
             var config = await _repository.LoadAsync();
-            config.Users.RemoveAll(u => u.FullName == SelectedUser.FullName);
+            var namesToRemove = toRemove.Select(u => u.FullName).ToHashSet();
+            config.Users.RemoveAll(u => namesToRemove.Contains(u.FullName));
             await _repository.SaveAsync(config);
             
-            Users.Remove(SelectedUser);
-            StatusMessage = "Пользователь удалён";
+            foreach (var item in toRemove)
+            {
+                Users.Remove(item);
+            }
+            
+            StatusMessage = count == 1 ? "Пользователь удалён" : $"Удалено пользователей: {count}";
         }
     }
     
@@ -300,6 +384,8 @@ public partial class SecurityPrincipalsViewModel : ObservableObject
         }
     }
     
+    // ===== Поиск пользователей =====
+    
     [RelayCommand]
     private async Task SearchUsers()
     {
@@ -309,9 +395,9 @@ public partial class SecurityPrincipalsViewModel : ObservableObject
             return;
         }
         
-        IsSearching = true;
-        StatusMessage = $"Поиск \"{UserSearchQuery}\"...";
-        SearchResults.Clear();
+        IsSearchingUsers = true;
+        StatusMessage = $"Поиск пользователей \"{UserSearchQuery}\"...";
+        UserSearchResults.Clear();
         
         try
         {
@@ -319,12 +405,12 @@ public partial class SecurityPrincipalsViewModel : ObservableObject
             
             if (results.Count == 0)
             {
-                StatusMessage = $"По запросу \"{UserSearchQuery}\" ничего не найдено";
+                StatusMessage = $"По запросу \"{UserSearchQuery}\" пользователей не найдено";
             }
             else
             {
-                SearchResults = new ObservableCollection<SecurityPrincipal>(results);
-                StatusMessage = $"Найдено: {results.Count} пользователей. Выберите и нажмите \"+ Добавить\"";
+                UserSearchResults = new ObservableCollection<SecurityPrincipal>(results);
+                StatusMessage = $"Найдено: {results.Count} пользователей";
             }
         }
         catch (Exception ex)
@@ -333,53 +419,132 @@ public partial class SecurityPrincipalsViewModel : ObservableObject
         }
         finally
         {
-            IsSearching = false;
+            IsSearchingUsers = false;
         }
     }
     
     [RelayCommand]
-    private async Task AddFromSearch()
+    private async Task AddUserFromSearch()
     {
-        if (SelectedSearchResult == null)
+        if (SelectedUserSearchResult == null)
         {
             StatusMessage = "Выберите пользователя из результатов поиска";
             return;
         }
         
-        var added = await _repository.MergePrincipalsAsync(new List<SecurityPrincipal> { SelectedSearchResult });
+        var added = await _repository.MergePrincipalsAsync(new List<SecurityPrincipal> { SelectedUserSearchResult });
         
         if (added > 0)
         {
-            Users.Add(SelectedSearchResult);
-            StatusMessage = $"Добавлен: {SelectedSearchResult.FullName}";
-            
-            // Убираем из результатов поиска
-            SearchResults.Remove(SelectedSearchResult);
-            SelectedSearchResult = null;
+            Users.Add(SelectedUserSearchResult);
+            StatusMessage = $"Добавлен: {SelectedUserSearchResult.FullName}";
+            UserSearchResults.Remove(SelectedUserSearchResult);
+            SelectedUserSearchResult = null;
         }
         else
         {
-            StatusMessage = $"'{SelectedSearchResult.FullName}' уже есть в списке";
+            StatusMessage = $"'{SelectedUserSearchResult.FullName}' уже есть в списке";
         }
     }
     
     [RelayCommand]
-    private async Task AddAllFromSearch()
+    private async Task AddAllUsersFromSearch()
     {
-        if (SearchResults.Count == 0)
+        if (UserSearchResults.Count == 0)
         {
             StatusMessage = "Нет результатов для добавления";
             return;
         }
         
-        var toAdd = SearchResults.ToList();
+        var toAdd = UserSearchResults.ToList();
         var added = await _repository.MergePrincipalsAsync(toAdd);
         
-        // Перезагружаем данные
         var config = await _repository.LoadAsync();
         Users = new ObservableCollection<SecurityPrincipal>(config.Users);
         
-        SearchResults.Clear();
-        StatusMessage = $"Добавлено: {added} пользователей";
+        UserSearchResults.Clear();
+        StatusMessage = $"Добавлено пользователей: {added}";
+    }
+    
+    // ===== Поиск групп =====
+    
+    [RelayCommand]
+    private async Task SearchGroups()
+    {
+        if (string.IsNullOrWhiteSpace(GroupSearchQuery) || GroupSearchQuery.Length < 2)
+        {
+            StatusMessage = "Введите минимум 2 символа для поиска";
+            return;
+        }
+        
+        IsSearchingGroups = true;
+        StatusMessage = $"Поиск групп \"{GroupSearchQuery}\"...";
+        GroupSearchResults.Clear();
+        
+        try
+        {
+            var results = await _repository.SearchGroupsInAdAsync(GroupSearchQuery);
+            
+            if (results.Count == 0)
+            {
+                StatusMessage = $"По запросу \"{GroupSearchQuery}\" групп не найдено";
+            }
+            else
+            {
+                GroupSearchResults = new ObservableCollection<SecurityPrincipal>(results);
+                StatusMessage = $"Найдено: {results.Count} групп";
+            }
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"Ошибка поиска: {ex.Message}";
+        }
+        finally
+        {
+            IsSearchingGroups = false;
+        }
+    }
+    
+    [RelayCommand]
+    private async Task AddGroupFromSearch()
+    {
+        if (SelectedGroupSearchResult == null)
+        {
+            StatusMessage = "Выберите группу из результатов поиска";
+            return;
+        }
+        
+        var added = await _repository.MergePrincipalsAsync(new List<SecurityPrincipal> { SelectedGroupSearchResult });
+        
+        if (added > 0)
+        {
+            Groups.Add(SelectedGroupSearchResult);
+            StatusMessage = $"Добавлена: {SelectedGroupSearchResult.FullName}";
+            GroupSearchResults.Remove(SelectedGroupSearchResult);
+            SelectedGroupSearchResult = null;
+        }
+        else
+        {
+            StatusMessage = $"'{SelectedGroupSearchResult.FullName}' уже есть в списке";
+        }
+    }
+    
+    [RelayCommand]
+    private async Task AddAllGroupsFromSearch()
+    {
+        if (GroupSearchResults.Count == 0)
+        {
+            StatusMessage = "Нет результатов для добавления";
+            return;
+        }
+        
+        var toAdd = GroupSearchResults.ToList();
+        var added = await _repository.MergePrincipalsAsync(toAdd);
+        
+        var config = await _repository.LoadAsync();
+        Groups = new ObservableCollection<SecurityPrincipal>(config.Groups);
+        
+        GroupSearchResults.Clear();
+        StatusMessage = $"Добавлено групп: {added}";
     }
 }
