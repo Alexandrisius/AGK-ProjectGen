@@ -260,9 +260,50 @@
                                 <DataGridTemplateColumn Header="Значение" Width="*" MinWidth="80">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
-                                            <TextBox Text="{Binding Value, UpdateSourceTrigger=PropertyChanged}"
-                                                     Style="{StaticResource ModernTextBoxStyle}"
-                                                     Padding="6,4" Margin="2"/>
+                                            <Grid>
+                                                <TextBox x:Name="ValueTextBox"
+                                                         Text="{Binding Value, UpdateSourceTrigger=PropertyChanged}"
+                                                         Style="{StaticResource ModernTextBoxStyle}"
+                                                         Padding="6,4" Margin="2"
+                                                         ToolTip="Введите = для выбора атрибута"/>
+                                                <Popup IsOpen="{Binding IsValueDropdownOpen}"
+                                                       PlacementTarget="{Binding ElementName=ValueTextBox}"
+                                                       Placement="Bottom"
+                                                       StaysOpen="False"
+                                                       AllowsTransparency="True">
+                                                    <Border Background="White" 
+                                                            BorderBrush="{StaticResource BorderBrush}" 
+                                                            BorderThickness="1" 
+                                                            CornerRadius="4"
+                                                            MaxHeight="150"
+                                                            MinWidth="200">
+                                                        <ListBox ItemsSource="{Binding FilteredValueSuggestions}"
+                                                                 BorderThickness="0"
+                                                                 Background="Transparent"
+                                                                 MaxHeight="150"
+                                                                 SelectionMode="Single">
+                                                            <ListBox.ItemContainerStyle>
+                                                                <Style TargetType="ListBoxItem">
+                                                                    <Setter Property="Padding" Value="0"/>
+                                                                    <Setter Property="Margin" Value="0"/>
+                                                                </Style>
+                                                            </ListBox.ItemContainerStyle>
+                                                            <ListBox.ItemTemplate>
+                                                                <DataTemplate>
+                                                                    <Border Padding="8,6" Cursor="Hand" Background="Transparent">
+                                                                        <Border.InputBindings>
+                                                                            <MouseBinding MouseAction="LeftClick" 
+                                                                                          Command="{Binding DataContext.SelectValueSuggestionCommand, RelativeSource={RelativeSource AncestorType=Grid}}"
+                                                                                          CommandParameter="{Binding}"/>
+                                                                        </Border.InputBindings>
+                                                                        <TextBlock Text="{Binding}" FontFamily="Consolas"/>
+                                                                    </Border>
+                                                                </DataTemplate>
+                                                            </ListBox.ItemTemplate>
+                                                        </ListBox>
+                                                    </Border>
+                                                </Popup>
+                                            </Grid>
                                         </DataTemplate>
                                     </DataGridTemplateColumn.CellTemplate>
                                 </DataGridTemplateColumn>

@@ -19,6 +19,9 @@ public partial class AclRuleEditorViewModel : ObservableObject
     [ObservableProperty]
     private AclRuleDefinition? _selectedRule;
     
+    // Для отслеживания предыдущего правила и сохранения его изменений при переключении
+    private AclRuleDefinition? _previousSelectedRule;
+    
     [ObservableProperty]
     private ObservableCollection<SecurityPrincipal> _availablePrincipals = new();
     
@@ -74,6 +77,11 @@ public partial class AclRuleEditorViewModel : ObservableObject
     [ObservableProperty]
     private ObservableCollection<string> _commonAttributes = new();
     
+    /// <summary>
+    /// Загруженные словари с элементами для автодополнения значений.
+    /// </summary>
+    private IEnumerable<Domain.Schema.DictionarySchema>? _loadedDictionaries;
+    
     public AclRuleEditorViewModel(ISecurityPrincipalRepository principalRepository)
     {
         _principalRepository = principalRepository;
@@ -103,6 +111,9 @@ public partial class AclRuleEditorViewModel : ObservableObject
         IEnumerable<Domain.Schema.DictionarySchema>? dictionaries, 
         IEnumerable<Domain.Schema.FieldSchema>? attributes)
     {
+        // Сохраняем словари для автодополнения значений
+        _loadedDictionaries = dictionaries?.ToList();
+        
         CommonAttributes.Clear();
         
         // Добавляем базовые атрибуты проекта
@@ -157,12 +168,18 @@ public partial class AclRuleEditorViewModel : ObservableObject
     
     partial void OnSelectedRuleChanged(AclRuleDefinition? value)
     {
+        // Сначала сохраняем изменения условий для предыдущего правила
+        if (_previousSelectedRule != null && CurrentConditions.Count > 0)
+        {
+            ApplyConditionChangesToRule(_previousSelectedRule);
+        }
+        
         CurrentConditions.Clear();
         if (value != null)
         {
             foreach (var condition in value.Conditions)
             {
-                CurrentConditions.Add(new AclConditionViewModel(condition));
+                CurrentConditions.Add(new AclConditionViewModel(condition, _loadedDictionaries));
             }
             
             // Синхронизируем SelectedPrincipal с PrincipalIdentity текущего правила
@@ -172,6 +189,9 @@ public partial class AclRuleEditorViewModel : ObservableObject
         {
             SelectedPrincipal = null;
         }
+        
+        // Запоминаем текущее правило как предыдущее для следующего переключения
+        _previousSelectedRule = value;
     }
     
     partial void OnSelectedPrincipalChanged(SecurityPrincipal? value)
@@ -302,7 +322,7 @@ public partial class AclRuleEditorViewModel : ObservableObject
         
         // Добавляем только в UI-коллекцию (копия)
         // Изменения применятся к SelectedRule.Conditions при ApplyConditionChanges()
-        var newCondition = new AclConditionViewModel();
+        var newCondition = new AclConditionViewModel(_loadedDictionaries);
         CurrentConditions.Add(newCondition);
     }
     
@@ -340,13 +360,25 @@ public partial class AclRuleEditorViewModel : ObservableObject
     /// </summary>
     public void ApplyConditionChanges()
     {
-        if (SelectedRule == null) return;
+        // Применяем изменения для текущего выбранного правила
+        if (SelectedRule != null)
+        {
+            ApplyConditionChangesToRule(SelectedRule);
+        }
+    }
+    
+    /// <summary>
+    /// Применяет изменения условий из CurrentConditions к указанному правилу.
+    /// </summary>
+    private void ApplyConditionChangesToRule(AclRuleDefinition rule)
+    {
+        if (rule == null) return;
         
         // Перестраиваем коллекцию условий из UI-копий
-        SelectedRule.Conditions.Clear();
+        rule.Conditions.Clear();
         foreach (var conditionVm in CurrentConditions)
         {
-            SelectedRule.Conditions.Add(conditionVm.ApplyToOriginal());
+            rule.Conditions.Add(conditionVm.ApplyToOriginal());
         }
     }
     
@@ -547,6 +579,11 @@ public partial class AclConditionViewModel : ObservableObject
     /// </summary>
     public bool IsNew { get; set; }
     
+    /// <summary>
+    /// Загруженные словари для получения реальных значений.
+    /// </summary>
+    public IEnumerable<Domain.Schema.DictionarySchema>? Dictionaries { get; set; }
+    
     [ObservableProperty]
     private bool _isSelected;
     
@@ -559,13 +596,20 @@ public partial class AclConditionViewModel : ObservableObject
     [ObservableProperty]
     private string _value = string.Empty;
     
+    [ObservableProperty]
+    private bool _isValueDropdownOpen;
+    
+    [ObservableProperty]
+    private ObservableCollection<string> _filteredValueSuggestions = new();
+    
     /// <summary>
     /// Создаёт ViewModel из существующего условия (копирует данные).
     /// </summary>
-    public AclConditionViewModel(AclCondition condition)
+    public AclConditionViewModel(AclCondition condition, IEnumerable<Domain.Schema.DictionarySchema>? dictionaries = null)
     {
         OriginalCondition = condition;
         IsNew = false;
+        Dictionaries = dictionaries;
         
         // Копируем данные
         _attributePath = condition.AttributePath;
@@ -576,13 +620,116 @@ public partial class AclConditionViewModel : ObservableObject
     /// <summary>
     /// Создаёт новую ViewModel для нового условия.
     /// </summary>
-    public AclConditionViewModel()
+    public AclConditionViewModel(IEnumerable<Domain.Schema.DictionarySchema>? dictionaries = null)
     {
         OriginalCondition = null;
         IsNew = true;
-        _attributePath = "Discipline.Code";
+        Dictionaries = dictionaries;
+        _attributePath = "";
         _operator = ConditionOperator.Equals;
         _value = "";
+    }
+    
+    partial void OnValueChanged(string value)
+    {
+        FilterValueSuggestions(value);
+    }
+    
+    /// <summary>
+    /// Фильтрует подсказки значений на основе выбранного AttributePath.
+    /// При вводе "=" показывает реальные значения из соответствующего словаря.
+    /// </summary>
+    private void FilterValueSuggestions(string value)
+    {
+        // Показываем подсказки только если значение начинается с "="
+        if (string.IsNullOrEmpty(value) || !value.StartsWith("="))
+        {
+            FilteredValueSuggestions.Clear();
+            IsValueDropdownOpen = false;
+            return;
+        }
+        
+        // Получаем текст после "=" для фильтрации
+        var searchText = value.Length > 1 ? value.Substring(1).ToLowerInvariant() : "";
+        
+        // Получаем значения на основе AttributePath
+        var suggestions = GetValuesForAttributePath(searchText);
+        
+        FilteredValueSuggestions = new ObservableCollection<string>(suggestions);
+        IsValueDropdownOpen = suggestions.Count > 0;
+    }
+    
+    /// <summary>
+    /// Получает реальные значения на основе выбранного AttributePath.
+    /// Например, если AttributePath = "Stages.Code", возвращает коды элементов словаря Stages.
+    /// </summary>
+    private List<string> GetValuesForAttributePath(string searchText)
+    {
+        var result = new List<string>();
+        
+        if (string.IsNullOrEmpty(AttributePath))
+            return result;
+        
+        // Разбираем AttributePath на части: "DictKey.Field"
+        var parts = AttributePath.Split('.');
+        if (parts.Length < 2)
+            return result;
+        
+        var dictKey = parts[0];  // Например: "Stages", "Buildings", "Project"
+        var fieldName = parts[1]; // Например: "Code", "Name"
+        
+        // Для атрибутов проекта (Project.Name, Project.Code) пока не можем получить значения
+        // так как они определяются только при создании проекта
+        if (dictKey.Equals("Project", StringComparison.OrdinalIgnoreCase))
+        {
+            return result;
+        }
+        
+        // Ищем словарь по ключу
+        if (Dictionaries == null)
+            return result;
+        
+        var dictionary = Dictionaries.FirstOrDefault(d => 
+            d.Key.Equals(dictKey, StringComparison.OrdinalIgnoreCase));
+        
+        if (dictionary == null || dictionary.Items == null || dictionary.Items.Count == 0)
+            return result;
+        
+        // Получаем значения в зависимости от поля
+        IEnumerable<string> values;
+        if (fieldName.Equals("Code", StringComparison.OrdinalIgnoreCase))
+        {
+            values = dictionary.Items.Select(i => i.Code);
+        }
+        else if (fieldName.Equals("Name", StringComparison.OrdinalIgnoreCase))
+        {
+            values = dictionary.Items.Select(i => i.Name);
+        }
+        else
+        {
+            return result;
+        }
+        
+        // Фильтруем по введённому тексту
+        result = values
+            .Where(v => !string.IsNullOrEmpty(v))
+            .Where(v => string.IsNullOrEmpty(searchText) || 
+                        v.ToLowerInvariant().Contains(searchText))
+            .Distinct()
+            .Take(15)
+            .ToList();
+        
+        return result;
+    }
+    
+    /// <summary>
+    /// Выбирает подсказку из списка.
+    /// </summary>
+    [RelayCommand]
+    private void SelectValueSuggestion(string suggestion)
+    {
+        Value = suggestion;
+        IsValueDropdownOpen = false;
     }
     
     /// <summary>
