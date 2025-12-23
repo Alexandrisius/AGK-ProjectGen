@@ -9,6 +9,7 @@ using CommunityToolkit.Mvvm.Input;
 using System.Diagnostics;
 using System.Windows;
 using AGK.ProjectGen.UI.Views;
+using AGK.ProjectGen.UI.Services;
 
 namespace AGK.ProjectGen.UI.ViewModels;
 
@@ -20,7 +21,10 @@ public partial class ProjectViewModel : ObservableObject
     private readonly IAclService _aclService;
     private readonly IAclFormulaEngine _aclFormulaEngine;
     private readonly IDialogService _dialogService;
+
     private readonly ISecurityPrincipalRepository _securityPrincipalRepository;
+    private readonly IDraftProjectsService _draftProjectsService; 
+
 
     #region Основные свойства
 
@@ -129,7 +133,8 @@ public partial class ProjectViewModel : ObservableObject
         IAclService aclService,
         IAclFormulaEngine aclFormulaEngine,
         IDialogService dialogService,
-        ISecurityPrincipalRepository securityPrincipalRepository)
+        ISecurityPrincipalRepository securityPrincipalRepository,
+        IDraftProjectsService draftProjectsService)
     {
         _profileRepository = profileRepository;
         _projectManagerService = projectManagerService;
@@ -138,6 +143,7 @@ public partial class ProjectViewModel : ObservableObject
         _aclFormulaEngine = aclFormulaEngine;
         _dialogService = dialogService;
         _securityPrincipalRepository = securityPrincipalRepository;
+        _draftProjectsService = draftProjectsService;
 
         LoadProfilesCommand.Execute(null);
     }
@@ -200,6 +206,48 @@ public partial class ProjectViewModel : ObservableObject
     }
 
     /// <summary>
+    /// Сохраняет текущее состояние как черновик.
+    /// </summary>
+    public void SaveCurrentStateAsDraft()
+    {
+        if (IsEditMode || SelectedProfile == null) return;
+
+        var draft = new Project
+        {
+            Name = ProjectName,
+            ProfileId = SelectedProfile.Id,
+            RootPath = ProjectPath,
+            // Сохраняем структуру, если была сгенерирована
+            SavedStructure = IsPreviewGenerated ? PreviewStructure.FirstOrDefault() : null
+        };
+
+        // 1. Атрибуты
+        foreach (var attr in DynamicAttributes)
+        {
+            draft.AttributeValues[attr.Key] = attr.Value;
+        }
+
+        // 2. Выбор галочек
+        foreach (var group in DynamicSelectionGroups)
+        {
+            draft.CompositionSelections[group.Key] = group.SelectedCodes.ToList();
+        }
+
+        // 3. Таблицы
+        foreach (var table in DynamicTableFields)
+        {
+            var rows = table.Rows.Select(r => new Dictionary<string, object> 
+            { 
+                { "Code", r.Code }, 
+                { "Name", r.Name } 
+            }).ToList();
+            draft.TableData[table.Key] = rows;
+        }
+
+        _draftProjectsService.SaveDraft(draft);
+    }
+
+    /// <summary>
     /// Восстанавливает данные проекта в UI-коллекции.
     /// Вызывается после загрузки профиля.
     /// </summary>
@@ -227,6 +275,8 @@ public partial class ProjectViewModel : ObservableObject
             else
             {
                 // Если нет сохранённого выбора — снимаем все галочки (кроме дефолтных)
+                // Но если мы восстанавливаем черновик, возможно стоит оставить дефолтные?
+                // Нет, черновик должен быть точным. Если в черновике ничего не выбрано, то так и должно быть.
                 foreach (var item in group.Items)
                 {
                     item.IsSelected = false;
@@ -440,6 +490,16 @@ public partial class ProjectViewModel : ObservableObject
             _pendingProjectData = null;
             StatusMessage = $"Проект '{CurrentProject?.Name}' загружен для редактирования.";
         }
+        else if (!IsEditMode && _draftProjectsService.HasDraft(profile.Id))
+        {
+            // Автоматическое восстановление черновика
+            var draft = _draftProjectsService.GetDraft(profile.Id);
+            if (draft != null)
+            {
+                RestoreProjectData(draft);
+                StatusMessage = $"Восстановлен черновик для профиля '{profile.Name}'.";
+            }
+        }
         else
         {
             StatusMessage = $"Профиль '{profile.Name}' загружен. Выберите нужные элементы.";
@@ -517,9 +577,19 @@ public partial class ProjectViewModel : ObservableObject
                 project.CompositionSelections[group.Key] = group.SelectedCodes.ToList();
             }
 
+            // 1. Сохраняем текущие ACL-оверрайды перед перегенерацией
+            var savedAclOverrides = new Dictionary<string, List<AclRule>>();
+            if (PreviewStructure.Any())
+            {
+                CollectAclOverrides(PreviewStructure.First(), savedAclOverrides);
+            }
+
             // Генерируем превью с учётом выбранных элементов
             var rootNode = GenerateStructureWithSelections(project, SelectedProfile);
             
+            // 2. Восстанавливаем ACL-оверрайды
+            RestoreAclOverrides(rootNode, savedAclOverrides);
+
             // Проверяем существование папок на диске для отображения статуса NEW
             RefreshNodeStatus(rootNode);
             
@@ -799,6 +869,54 @@ public partial class ProjectViewModel : ObservableObject
         return 1 + node.Children.Sum(c => CountNodes(c));
     }
 
+    private void CollectAclOverrides(GeneratedNode node, Dictionary<string, List<AclRule>> overrides)
+    {
+        if (node.NodeAclOverrides != null && node.NodeAclOverrides.Any())
+        {
+            var key = GetNodeKey(node);
+            overrides[key] = node.NodeAclOverrides.ToList(); // Copy list
+        }
+
+        foreach (var child in node.Children)
+        {
+            CollectAclOverrides(child, overrides);
+        }
+    }
+
+    private void RestoreAclOverrides(GeneratedNode node, Dictionary<string, List<AclRule>> overrides)
+    {
+        var key = GetNodeKey(node);
+        if (overrides.TryGetValue(key, out var savedRules))
+        {
+            node.NodeAclOverrides = savedRules;
+        }
+
+        foreach (var child in node.Children)
+        {
+            RestoreAclOverrides(child, overrides);
+        }
+    }
+
+    private string GetNodeKey(GeneratedNode node)
+    {
+        // Идентификация узла:
+        // Для корня - просто ID определения (если имя меняется, ACL должны остаться на корне)
+        if (node.IsRoot && !string.IsNullOrEmpty(node.StructureDefinitionId))
+        {
+            return node.StructureDefinitionId;
+        }
+
+        // Для остальных: ID определения + Имя
+        // Это позволяет различать динамические папки (Building 1, Building 2), которые имеют один DefinitionId
+        if (!string.IsNullOrEmpty(node.StructureDefinitionId))
+        {
+            return $"{node.StructureDefinitionId}:{node.Name}";
+        }
+        
+        // Fallback
+        return node.FullPath; 
+    }
+
     private int CountNodesByOperation(GeneratedNode node, NodeOperation operation)
     {
         var count = node.Operation == operation ? 1 : 0;
@@ -953,9 +1071,33 @@ public partial class ProjectViewModel : ObservableObject
             // Фильтруем удалённые узлы из сохранённой структуры
             project.SavedStructure = CloneStructureWithoutDeleted(rootNode);
 
-            StatusMessage = IsEditMode 
-                ? "Проект успешно обновлён!" 
-                : "Проект успешно создан!";
+            // Если проект успешно создан, очищаем черновик для этого профиля
+            if (!IsEditMode)
+            {
+                if (SelectedProfile != null)
+                {
+                     _draftProjectsService.ClearDraft(SelectedProfile.Id);
+                }
+                
+                // Переключаемся в режим редактирования СОЗДАННОГО проекта
+                // Это предотвращает создание дубликатов при повторном нажатии
+                CurrentProject = project;
+                IsEditMode = true;
+                
+                // Показываем диалоговое окно об успехе
+                System.Windows.MessageBox.Show(
+                    "Проект успешно создан!\n\nВы можете продолжить работу с ним в режиме редактирования.",
+                    "Успех",
+                    System.Windows.MessageBoxButton.OK,
+                    System.Windows.MessageBoxImage.Information);
+            }
+            else
+            {
+                 // В режиме обновления просто показываем статус (или тоже можно диалог, но просили именно про создание)
+                 // Но для единообразия можно показать диалог и тут, если пользователь захочет.
+                 // Пока оставим статус для обновления, как было.
+                 StatusMessage = "Проект успешно обновлён!";
+            }
         }
         catch (Exception ex)
         {

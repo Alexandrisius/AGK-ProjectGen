@@ -46,19 +46,19 @@ public partial class MainViewModel : ObservableObject
     [RelayCommand]
     public void NavigateToProfiles()
     {
-        CurrentView = _serviceProvider.GetRequiredService<ProfileViewModel>();
+        NavigateTo(_serviceProvider.GetRequiredService<ProfileViewModel>());
     }
 
     [RelayCommand]
     public void NavigateToProjects()
     {
-        CurrentView = _serviceProvider.GetRequiredService<ProjectsListViewModel>();
+        NavigateTo(_serviceProvider.GetRequiredService<ProjectsListViewModel>());
     }
     
     // Helper method to be called from Messenger
     public void NavigateToCreateProject()
     {
-         CurrentView = _serviceProvider.GetRequiredService<ProjectViewModel>();
+         NavigateTo(_serviceProvider.GetRequiredService<ProjectViewModel>());
     }
     
     // Навигация к редактированию существующего проекта
@@ -66,12 +66,41 @@ public partial class MainViewModel : ObservableObject
     {
          var vm = _serviceProvider.GetRequiredService<ProjectViewModel>();
          vm.LoadExistingProject(project);
-         CurrentView = vm;
+         NavigateTo(vm);
     }
     
     public void NavigateToDashboard()
     {
-        CurrentView = "Welcome to AGK ProjectGen";
+        NavigateTo("Welcome to AGK ProjectGen");
+    }
+
+    private void NavigateTo(object newView)
+    {
+        // 1. Обработка ухода со страницы (Navigation Guard)
+        if (CurrentView is ProjectViewModel projectVm)
+        {
+            projectVm.SaveCurrentStateAsDraft();
+        }
+        else if (CurrentView is ProfileViewModel profileVm)
+        {
+             if (profileVm.HasUnsavedChanges())
+             {
+                 var result = MessageBox.Show(
+                     "Есть несохраненные изменения в профиле. Сохранить их перед выходом?", 
+                     "Несохраненные изменения", 
+                     MessageBoxButton.YesNoCancel,
+                     MessageBoxImage.Warning);
+                     
+                 if (result == MessageBoxResult.Cancel) return;
+                 
+                 if (result == MessageBoxResult.Yes)
+                 {
+                     profileVm.SaveProfileCommand.Execute(null);
+                 }
+             }
+        }
+
+        CurrentView = newView;
     }
     
     [RelayCommand]

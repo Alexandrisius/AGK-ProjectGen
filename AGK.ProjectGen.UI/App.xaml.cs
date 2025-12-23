@@ -46,6 +46,7 @@ public partial class App : System.Windows.Application
         // UI Services
         services.AddSingleton<IDialogService, DialogService>();
         services.AddSingleton<IUpdateService, UpdateService>();
+        services.AddSingleton<IDraftProjectsService, DraftProjectsService>();
 
         // ViewModels
         services.AddSingleton<MainViewModel>();

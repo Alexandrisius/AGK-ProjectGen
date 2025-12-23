@@ -86,6 +86,11 @@ public partial class ProfileViewModel : ObservableObject
     /// </summary>
     [ObservableProperty]
     private string? _defaultProfileId;
+    
+    [ObservableProperty]
+    private bool _isDirty;
+
+    public bool HasUnsavedChanges() => IsDirty;
 
     private System.Timers.Timer? _saveStatusTimer;
 
@@ -402,6 +407,8 @@ public partial class ProfileViewModel : ObservableObject
         {
             await _repository.SaveAsync(SelectedProfile);
             
+            IsDirty = false;
+
             // Показать временный статус успеха
             IsSaveSuccess = true;
             SaveButtonText = "✓ Сохранено!";
@@ -469,6 +476,7 @@ public partial class ProfileViewModel : ObservableObject
         };
         SelectedProfile.ProjectAttributes.Add(newAttr);
         SelectedAttribute = newAttr;
+        IsDirty = true;
     }
 
     [RelayCommand]
@@ -481,6 +489,7 @@ public partial class ProfileViewModel : ObservableObject
         
         SelectedProfile.ProjectAttributes.Remove(SelectedAttribute);
         SelectedAttribute = null;
+        IsDirty = true;
     }
 
     #endregion
@@ -523,6 +532,7 @@ public partial class ProfileViewModel : ObservableObject
         };
         SelectedProfile.Dictionaries.Add(newDict);
         SelectedDictionary = newDict;
+        IsDirty = true;
     }
 
     [RelayCommand]
@@ -535,6 +545,7 @@ public partial class ProfileViewModel : ObservableObject
         
         SelectedProfile.Dictionaries.Remove(SelectedDictionary);
         SelectedDictionary = null;
+        IsDirty = true;
     }
 
     [RelayCommand]
@@ -549,6 +560,7 @@ public partial class ProfileViewModel : ObservableObject
         };
         SelectedDictionary.Items.Add(newItem);
         SelectedDictionaryItem = newItem;
+        IsDirty = true;
     }
 
     [RelayCommand]
@@ -561,6 +573,7 @@ public partial class ProfileViewModel : ObservableObject
         
         SelectedDictionary.Items.Remove(SelectedDictionaryItem);
         SelectedDictionaryItem = null;
+        IsDirty = true;
     }
 
     #endregion
@@ -601,6 +614,7 @@ public partial class ProfileViewModel : ObservableObject
             TypeId = newTypeId, 
             DisplayName = "Новый тип" 
         });
+        IsDirty = true;
     }
 
     [RelayCommand]
@@ -614,6 +628,7 @@ public partial class ProfileViewModel : ObservableObject
             return;
         
         SelectedProfile.NodeTypes.Remove(last);
+        IsDirty = true;
     }
 
     #endregion
@@ -628,6 +643,7 @@ public partial class ProfileViewModel : ObservableObject
         { 
             NodeTypeId = "Folder"
         });
+        IsDirty = true;
     }
     
     [RelayCommand]
@@ -638,6 +654,7 @@ public partial class ProfileViewModel : ObservableObject
         { 
             NodeTypeId = "Folder"
         });
+        IsDirty = true;
     }
     
     [RelayCommand]
@@ -662,6 +679,7 @@ public partial class ProfileViewModel : ObservableObject
         if (RemoveNodeRecursive(SelectedProfile.Structure.RootNodes, SelectedStructureNode))
         {
             SelectedStructureNode = null;
+            IsDirty = true;
         }
     }
 
