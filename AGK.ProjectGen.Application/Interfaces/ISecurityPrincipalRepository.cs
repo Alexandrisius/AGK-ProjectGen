@@ -32,5 +32,12 @@ public interface ISecurityPrincipalRepository
     /// Добавляет группы/пользователей в конфигурацию (без дублирования).
     /// </summary>
     Task<int> MergePrincipalsAsync(List<SecurityPrincipal> principals);
+    
+    /// <summary>
+    /// Поиск пользователей в Active Directory по части имени, логина или фамилии.
+    /// </summary>
+    /// <param name="query">Строка поиска (минимум 2 символа)</param>
+    /// <returns>Список найденных пользователей (максимум 50)</returns>
+    Task<List<SecurityPrincipal>> SearchUsersInAdAsync(string query);
 }
 

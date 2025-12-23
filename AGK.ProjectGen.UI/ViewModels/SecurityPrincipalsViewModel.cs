@@ -36,6 +36,18 @@ public partial class SecurityPrincipalsViewModel : ObservableObject
     [ObservableProperty]
     private bool _isLoading;
     
+    [ObservableProperty]
+    private string _userSearchQuery = "";
+    
+    [ObservableProperty]
+    private ObservableCollection<SecurityPrincipal> _searchResults = new();
+    
+    [ObservableProperty]
+    private bool _isSearching;
+    
+    [ObservableProperty]
+    private SecurityPrincipal? _selectedSearchResult;
+    
     private string _configPath = "";
     
     public SecurityPrincipalsViewModel(ISecurityPrincipalRepository repository)
@@ -286,5 +298,88 @@ public partial class SecurityPrincipalsViewModel : ObservableObject
                 System.Windows.MessageBoxButton.OK,
                 System.Windows.MessageBoxImage.Error);
         }
+    }
+    
+    [RelayCommand]
+    private async Task SearchUsers()
+    {
+        if (string.IsNullOrWhiteSpace(UserSearchQuery) || UserSearchQuery.Length < 2)
+        {
+            StatusMessage = "Введите минимум 2 символа для поиска";
+            return;
+        }
+        
+        IsSearching = true;
+        StatusMessage = $"Поиск \"{UserSearchQuery}\"...";
+        SearchResults.Clear();
+        
+        try
+        {
+            var results = await _repository.SearchUsersInAdAsync(UserSearchQuery);
+            
+            if (results.Count == 0)
+            {
+                StatusMessage = $"По запросу \"{UserSearchQuery}\" ничего не найдено";
+            }
+            else
+            {
+                SearchResults = new ObservableCollection<SecurityPrincipal>(results);
+                StatusMessage = $"Найдено: {results.Count} пользователей. Выберите и нажмите \"+ Добавить\"";
+            }
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"Ошибка поиска: {ex.Message}";
+        }
+        finally
+        {
+            IsSearching = false;
+        }
+    }
+    
+    [RelayCommand]
+    private async Task AddFromSearch()
+    {
+        if (SelectedSearchResult == null)
+        {
+            StatusMessage = "Выберите пользователя из результатов поиска";
+            return;
+        }
+        
+        var added = await _repository.MergePrincipalsAsync(new List<SecurityPrincipal> { SelectedSearchResult });
+        
+        if (added > 0)
+        {
+            Users.Add(SelectedSearchResult);
+            StatusMessage = $"Добавлен: {SelectedSearchResult.FullName}";
+            
+            // Убираем из результатов поиска
+            SearchResults.Remove(SelectedSearchResult);
+            SelectedSearchResult = null;
+        }
+        else
+        {
+            StatusMessage = $"'{SelectedSearchResult.FullName}' уже есть в списке";
+        }
+    }
+    
+    [RelayCommand]
+    private async Task AddAllFromSearch()
+    {
+        if (SearchResults.Count == 0)
+        {
+            StatusMessage = "Нет результатов для добавления";
+            return;
+        }
+        
+        var toAdd = SearchResults.ToList();
+        var added = await _repository.MergePrincipalsAsync(toAdd);
+        
+        // Перезагружаем данные
+        var config = await _repository.LoadAsync();
+        Users = new ObservableCollection<SecurityPrincipal>(config.Users);
+        
+        SearchResults.Clear();
+        StatusMessage = $"Добавлено: {added} пользователей";
     }
 }

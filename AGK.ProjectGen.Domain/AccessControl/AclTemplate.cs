@@ -16,4 +16,17 @@ public class AclRule
     public string Competence { get; set; } = "Reader"; // Description or Role Name
     public ProjectAccessRights Rights { get; set; } 
     public bool IsDeny { get; set; }
+    
+    /// <summary>
+    /// Признак нового правила (добавленного пользователем в текущей сессии).
+    /// Используется для визуального выделения в UI.
+    /// </summary>
+    public bool IsNew { get; set; }
+    
+    /// <summary>
+    /// Признак правила, загруженного с диска (существующего на папке).
+    /// Используется для визуального выделения в UI.
+    /// </summary>
+    public bool IsFromDisk { get; set; }
 }
+

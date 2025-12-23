@@ -40,6 +40,15 @@ public partial class AclRuleEditorViewModel : ObservableObject
     [ObservableProperty]
     private string _presetName = string.Empty;
     
+    [ObservableProperty]
+    private string _principalSearchQuery = string.Empty;
+    
+    [ObservableProperty]
+    private ObservableCollection<SecurityPrincipal> _filteredPrincipals = new();
+    
+    [ObservableProperty]
+    private bool _isSearchDropdownOpen;
+    
     public bool HasRules => Rules.Count > 0;
     
     public string[] AvailableOperators { get; } = new[]
@@ -171,6 +180,74 @@ public partial class AclRuleEditorViewModel : ObservableObject
         if (SelectedRule != null && value != null)
         {
             SelectedRule.PrincipalIdentity = value.FullName;
+            // Закрываем dropdown и обновляем поисковое поле
+            PrincipalSearchQuery = value.FullName;
+            IsSearchDropdownOpen = false;
+        }
+    }
+    
+    partial void OnPrincipalSearchQueryChanged(string value)
+    {
+        FilterPrincipals(value);
+    }
+    
+    /// <summary>
+    /// Фильтрует список субъектов безопасности по запросу.
+    /// Умный поиск: по частям имени, регистронезависимый.
+    /// </summary>
+    private void FilterPrincipals(string query)
+    {
+        if (string.IsNullOrWhiteSpace(query) || query.Length < 2)
+        {
+            FilteredPrincipals.Clear();
+            IsSearchDropdownOpen = false;
+            return;
+        }
+        
+        // Разбиваем запрос на части
+        var queryParts = query
+            .Split(new[] { ' ', ',', ';' }, StringSplitOptions.RemoveEmptyEntries)
+            .Where(p => p.Length >= 1)
+            .Select(p => p.ToLowerInvariant())
+            .ToArray();
+        
+        if (queryParts.Length == 0)
+        {
+            FilteredPrincipals.Clear();
+            IsSearchDropdownOpen = false;
+            return;
+        }
+        
+        // Фильтруем по всем частям запроса
+        var filtered = AvailablePrincipals
+            .Where(p =>
+            {
+                var searchText = $"{p.Name} {p.Domain} {p.Description}".ToLowerInvariant();
+                return queryParts.All(part => searchText.Contains(part));
+            })
+            .OrderByDescending(p => queryParts.Any(part => 
+                p.Name.StartsWith(part, StringComparison.OrdinalIgnoreCase)))
+            .ThenBy(p => p.Name)
+            .Take(20)
+            .ToList();
+        
+        FilteredPrincipals = new ObservableCollection<SecurityPrincipal>(filtered);
+        IsSearchDropdownOpen = filtered.Count > 0;
+    }
+    
+    /// <summary>
+    /// Выбирает субъекта безопасности из результатов поиска.
+    /// </summary>
+    [RelayCommand]
+    private void SelectPrincipalFromSearch(SecurityPrincipal? principal)
+    {
+        if (principal != null && SelectedRule != null)
+        {
+            SelectedRule.PrincipalIdentity = principal.FullName;
+            SelectedPrincipal = principal;
+            PrincipalSearchQuery = principal.FullName;
+            IsSearchDropdownOpen = false;
+            OnPropertyChanged(nameof(SelectedRule));
         }
     }
     
@@ -182,12 +259,16 @@ public partial class AclRuleEditorViewModel : ObservableObject
         if (SelectedRule == null || string.IsNullOrEmpty(SelectedRule.PrincipalIdentity))
         {
             SelectedPrincipal = null;
+            PrincipalSearchQuery = string.Empty;
             return;
         }
         
         // Ищем principal по FullName
         SelectedPrincipal = AvailablePrincipals.FirstOrDefault(p => 
             p.FullName.Equals(SelectedRule.PrincipalIdentity, StringComparison.OrdinalIgnoreCase));
+        
+        // Обновляем поисковое поле
+        PrincipalSearchQuery = SelectedRule.PrincipalIdentity;
     }
     
     [RelayCommand]

@@ -103,25 +103,90 @@
                         <!-- Principal Selection -->
                         <TextBlock Text="Субъект безопасности" Style="{StaticResource H3Style}" Margin="0,0,0,8"/>
                         
-                        <TextBlock Text="Выберите из списка:" Style="{StaticResource LabelStyle}" Margin="0,0,0,4"/>
-                        <ComboBox ItemsSource="{Binding AvailablePrincipals}" 
-                                  SelectedItem="{Binding SelectedPrincipal}"
-                                  DisplayMemberPath="FullName"
-                                  Style="{StaticResource ModernComboBoxStyle}" Margin="0,0,0,8"/>
-                        
-                        <TextBlock Text="Или введите вручную:" Style="{StaticResource LabelStyle}" Margin="0,0,0,4"/>
+                        <!-- Smart Search -->
+                        <TextBlock Text="🔍 Поиск (введите часть имени или логина):" Style="{StaticResource LabelStyle}" Margin="0,0,0,4"/>
                         <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
-                            <TextBox Text="{Binding CustomPrincipalName, UpdateSourceTrigger=PropertyChanged}" 
-                                     Style="{StaticResource ModernTextBoxStyle}" 
-                                     ToolTip="Формат: DOMAIN\UserName или просто имя"/>
-                            <Button Grid.Column="1" Content="Применить" Padding="12,6" Margin="8,0,0,0"
-                                    Style="{StaticResource SecondaryButtonStyle}" 
-                                    Command="{Binding ApplyCustomPrincipalCommand}"/>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+                            
+                            <TextBox Grid.Row="0"
+                                     Text="{Binding PrincipalSearchQuery, UpdateSourceTrigger=PropertyChanged}"
+                                     Style="{StaticResource ModernTextBoxStyle}"
+                                     Padding="8,8"
+                                     ToolTip="Введите часть имени, логина или фамилии для поиска"/>
+                            
+                            <!-- Search Results Dropdown -->
+                            <Popup Grid.Row="1" 
+                                   IsOpen="{Binding IsSearchDropdownOpen}"
+                                   PlacementTarget="{Binding ElementName=PrincipalSearchBox}"
+                                   Placement="Bottom"
+                                   StaysOpen="False"
+                                   AllowsTransparency="True">
+                                <Border Background="White" 
+                                        BorderBrush="{StaticResource BorderBrush}" 
+                                        BorderThickness="1" 
+                                        CornerRadius="4"
+                                        MaxHeight="200"
+                                        MinWidth="350">
+                                    <ListBox ItemsSource="{Binding FilteredPrincipals}"
+                                             BorderThickness="0"
+                                             Background="Transparent"
+                                             MaxHeight="200">
+                                        <ListBox.ItemTemplate>
+                                            <DataTemplate>
+                                                <Border Padding="8,6" Cursor="Hand">
+                                                    <Border.InputBindings>
+                                                        <MouseBinding MouseAction="LeftClick" 
+                                                                      Command="{Binding DataContext.SelectPrincipalFromSearchCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                                      CommandParameter="{Binding}"/>
+                                                    </Border.InputBindings>
+                                                    <StackPanel>
+                                                        <TextBlock Text="{Binding FullName}" FontWeight="SemiBold"/>
+                                                        <TextBlock Text="{Binding Description}" 
+                                                                   Style="{StaticResource LabelStyle}" 
+                                                                   FontSize="11"
+                                                                   TextTrimming="CharacterEllipsis"/>
+                                                    </StackPanel>
+                                                </Border>
+                                            </DataTemplate>
+                                        </ListBox.ItemTemplate>
+                                    </ListBox>
+                                </Border>
+                            </Popup>
+                            
+                            <!-- Selected Principal Info -->
+                            <Border Grid.Row="1" 
+                                    Visibility="{Binding SelectedPrincipal, Converter={StaticResource NullToVisibilityConverter}}"
+                                    Background="{StaticResource BgPrimaryBrush}" 
+                                    CornerRadius="4" 
+                                    Padding="8" 
+                                    Margin="0,4,0,0">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="✅" Margin="0,0,6,0"/>
+                                    <TextBlock Text="{Binding SelectedPrincipal.FullName}" FontWeight="SemiBold"/>
+                                    <TextBlock Text="{Binding SelectedPrincipal.Description, StringFormat=' — {0}'}" 
+                                               Style="{StaticResource LabelStyle}" Margin="4,0,0,0"/>
+                                </StackPanel>
+                            </Border>
                         </Grid>
+                        
+                        <!-- Manual Entry (backup option) -->
+                        <Expander Header="Или введите вручную" Margin="0,8,0,0" IsExpanded="False">
+                            <Grid Margin="0,8,0,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBox Text="{Binding CustomPrincipalName, UpdateSourceTrigger=PropertyChanged}" 
+                                         Style="{StaticResource ModernTextBoxStyle}" 
+                                         ToolTip="Формат: DOMAIN\UserName или просто имя"/>
+                                <Button Grid.Column="1" Content="Применить" Padding="12,6" Margin="8,0,0,0"
+                                        Style="{StaticResource SecondaryButtonStyle}" 
+                                        Command="{Binding ApplyCustomPrincipalCommand}"/>
+                            </Grid>
+                        </Expander>
                         
                         <!-- Rights -->
                         <TextBlock Text="Права доступа" Style="{StaticResource H3Style}" Margin="0,16,0,8"/>

@@ -134,7 +134,8 @@
         <!-- ================================ -->
         <!--     WIZARD TABS                  -->
         <!-- ================================ -->
-        <TabControl Grid.Row="1" Background="Transparent" BorderThickness="0" Padding="0">
+        <TabControl Grid.Row="1" Background="Transparent" BorderThickness="0" Padding="0"
+                    SelectionChanged="TabControl_SelectionChanged">
             
             <!-- ========== TAB 1: Атрибуты ========== -->
             <TabItem Header="① Атрибуты проекта" Style="{StaticResource WizardTabItemStyle}">

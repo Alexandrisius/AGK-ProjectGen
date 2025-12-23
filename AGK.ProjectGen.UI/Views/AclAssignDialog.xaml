@@ -52,7 +52,10 @@
         <!-- Assigned Rules List -->
         <Border Grid.Row="2" Background="{StaticResource BgSecondaryBrush}" CornerRadius="8" Padding="12" Margin="0,0,0,16">
             <DockPanel>
-                <TextBlock DockPanel.Dock="Top" Text="Назначенные права:" Style="{StaticResource H3Style}" Margin="0,0,0,8"/>
+                <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,0,0,8">
+                    <TextBlock Text="Назначенные права:" Style="{StaticResource H3Style}"/>
+                    <TextBlock Text=" (🟢 — новые, 💾 — с диска)" Foreground="#888" FontSize="11" VerticalAlignment="Center" Margin="8,0,0,0"/>
+                </StackPanel>
                 
                 <DataGrid ItemsSource="{Binding AssignedRules}" 
                           SelectedItem="{Binding SelectedAssignedRule}"
@@ -61,7 +64,44 @@
                           Background="White"
                           GridLinesVisibility="Horizontal"
                           RowHeight="36">
+                    <DataGrid.RowStyle>
+                        <Style TargetType="DataGridRow">
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding IsNew}" Value="True">
+                                    <Setter Property="Background" Value="#E8F5E9"/>
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding IsFromDisk}" Value="True">
+                                    <Setter Property="Background" Value="#F5F5F5"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </DataGrid.RowStyle>
                     <DataGrid.Columns>
+                        <DataGridTemplateColumn Header="" Width="30">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <TextBlock VerticalAlignment="Center" HorizontalAlignment="Center">
+                                        <TextBlock.Style>
+                                            <Style TargetType="TextBlock">
+                                                <Setter Property="Text" Value=""/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsNew}" Value="True">
+                                                        <Setter Property="Text" Value="➕"/>
+                                                        <Setter Property="Foreground" Value="#4CAF50"/>
+                                                        <Setter Property="ToolTip" Value="Новое правило (будет добавлено)"/>
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding IsFromDisk}" Value="True">
+                                                        <Setter Property="Text" Value="💾"/>
+                                                        <Setter Property="Foreground" Value="#888"/>
+                                                        <Setter Property="ToolTip" Value="Существующее правило (с диска)"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
                         <DataGridTextColumn Header="Субъект" Binding="{Binding Identity}" Width="*"/>
                         <DataGridTextColumn Header="Права" Binding="{Binding Rights}" Width="100"/>
                         <DataGridCheckBoxColumn Header="Запрет" Binding="{Binding IsDeny}" Width="60"/>

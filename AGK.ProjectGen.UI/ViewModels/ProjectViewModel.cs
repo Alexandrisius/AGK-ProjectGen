@@ -977,8 +977,35 @@ public partial class ProjectViewModel : ObservableObject
             ContextAttributes = new Dictionary<string, object>(source.ContextAttributes),
             Exists = source.IsIncluded, // После выполнения плана папка существует только если IsIncluded
             Operation = NodeOperation.None,
-            IsIncluded = true // Все сохранённые узлы включены
+            IsIncluded = true, // Все сохранённые узлы включены
+            StructureDefinitionId = source.StructureDefinitionId,
+            // HasAclChanges сбрасываем, т.к. изменения были применены
+            HasAclChanges = false
         };
+        
+        // Копируем NodeAclOverrides (пользовательские изменения ACL)
+        foreach (var rule in source.NodeAclOverrides)
+        {
+            clone.NodeAclOverrides.Add(new AclRule
+            {
+                Identity = rule.Identity,
+                Rights = rule.Rights,
+                IsDeny = rule.IsDeny,
+                Competence = rule.Competence
+            });
+        }
+        
+        // Копируем PlannedAcl (для предпросмотра)
+        foreach (var rule in source.PlannedAcl)
+        {
+            clone.PlannedAcl.Add(new AclRule
+            {
+                Identity = rule.Identity,
+                Rights = rule.Rights,
+                IsDeny = rule.IsDeny,
+                Competence = rule.Competence
+            });
+        }
         
         foreach (var child in source.Children)
         {
@@ -1086,14 +1113,20 @@ public partial class ProjectViewModel : ObservableObject
 
         var viewModel = new AclViewerViewModel(_aclService);
         
-        if (Directory.Exists(node.FullPath))
+        // Если есть изменения (overrides), показываем превью с ними
+        if (node.HasAclChanges || node.NodeAclOverrides.Count > 0)
+        {
+            // Превью: показываем изменённые права + PlannedAcl
+            viewModel.LoadPreview(node.FullPath, node.NodeAclOverrides, node.PlannedAcl);
+        }
+        else if (Directory.Exists(node.FullPath))
         {
             // Реальные ACL с диска
             viewModel.LoadAcl(node.FullPath);
         }
         else
         {
-            // Превью: ACL из overrides + формул профиля
+            // Превью: ACL из формул профиля
             viewModel.LoadPreview(node.FullPath, node.NodeAclOverrides, node.PlannedAcl);
         }
 
@@ -1116,16 +1149,30 @@ public partial class ProjectViewModel : ObservableObject
         
         var viewModel = new AclAssignViewModel(_securityPrincipalRepository);
         
-        // Для существующих папок загружаем реальные ACL с диска
+        // Определяем текущие правила для редактирования:
+        // 1. Если у узла есть несохранённые изменения (HasAclChanges) — показываем их
+        // 2. Если папка существует и нет изменений — загружаем реальные ACL с диска
+        // 3. Если папка не существует — показываем overrides или пустой список
         List<AclRule> currentRules;
-        if (Directory.Exists(node.FullPath))
+        if (node.HasAclChanges || node.NodeAclOverrides.Count > 0)
         {
+            // Есть изменения или overrides — показываем их
+            currentRules = node.NodeAclOverrides.ToList();
+        }
+        else if (Directory.Exists(node.FullPath))
+        {
+            // Для существующих папок без изменений — загружаем реальные ACL с диска
             currentRules = _aclService.GetDirectoryAcl(node.FullPath);
+            // Помечаем как права с диска для визуального выделения
+            foreach (var rule in currentRules)
+            {
+                rule.IsFromDisk = true;
+            }
         }
         else
         {
-            // Для новых папок используем overrides или пустой список
-            currentRules = node.NodeAclOverrides.ToList();
+            // Для новых папок — пустой список
+            currentRules = new List<AclRule>();
         }
         
         viewModel.LoadNodeInfo(node.Name, node.FullPath, currentRules, node.PlannedAcl);

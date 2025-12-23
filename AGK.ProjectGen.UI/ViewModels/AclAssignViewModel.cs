@@ -106,7 +106,8 @@ public partial class AclAssignViewModel : ObservableObject
             Identity = identity,
             Rights = rights,
             IsDeny = IsDeny,
-            Competence = SelectedPrincipal?.Description ?? string.Empty
+            Competence = SelectedPrincipal?.Description ?? string.Empty,
+            IsNew = true  // Помечаем как новое правило для визуального выделения
         };
         
         AssignedRules.Add(rule);

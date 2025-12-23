@@ -86,18 +86,81 @@
                 </DockPanel>
             </Border>
             
-            <!-- Users List -->
+            <!-- Users List with Search -->
             <Border Grid.Column="1" Background="{StaticResource BgSecondaryBrush}" 
                     CornerRadius="8" Padding="12" Margin="8,0,0,0">
                 <DockPanel>
-                    <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,0,0,12">
-                        <TextBlock Text="👤 Пользователи" Style="{StaticResource H3Style}"/>
-                        <TextBlock Text="{Binding Users.Count, StringFormat=' ({0})'}" 
-                                   Style="{StaticResource LabelStyle}" VerticalAlignment="Bottom" Margin="4,0,0,2"/>
-                        <Button Content="🗑️" Padding="6,4" Margin="12,0,0,0"
-                                Style="{StaticResource SecondaryButtonStyle}"
-                                Command="{Binding RemoveUserCommand}"
-                                ToolTip="Удалить выбранного пользователя"/>
+                    <StackPanel DockPanel.Dock="Top" Margin="0,0,0,12">
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                            <TextBlock Text="👤 Пользователи" Style="{StaticResource H3Style}"/>
+                            <TextBlock Text="{Binding Users.Count, StringFormat=' ({0})'}" 
+                                       Style="{StaticResource LabelStyle}" VerticalAlignment="Bottom" Margin="4,0,0,2"/>
+                            <Button Content="🗑️" Padding="6,4" Margin="12,0,0,0"
+                                    Style="{StaticResource SecondaryButtonStyle}"
+                                    Command="{Binding RemoveUserCommand}"
+                                    ToolTip="Удалить выбранного пользователя"/>
+                        </StackPanel>
+                        
+                        <!-- Search Panel -->
+                        <Border Background="{StaticResource BgPrimaryBrush}" CornerRadius="6" Padding="8">
+                            <StackPanel>
+                                <TextBlock Text="🔍 Поиск пользователей" FontWeight="SemiBold" Margin="0,0,0,6"/>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBox Grid.Column="0" 
+                                             Text="{Binding UserSearchQuery, UpdateSourceTrigger=PropertyChanged}"
+                                             Style="{StaticResource ModernTextBoxStyle}"
+                                             Padding="8,6"
+                                             ToolTip="Введите часть имени или логина (минимум 2 символа)">
+                                        <TextBox.InputBindings>
+                                            <KeyBinding Key="Enter" Command="{Binding SearchUsersCommand}"/>
+                                        </TextBox.InputBindings>
+                                    </TextBox>
+                                    <Button Grid.Column="1" Content="🔍 Найти" Padding="12,6" Margin="6,0,0,0"
+                                            Style="{StaticResource PrimaryButtonStyle}"
+                                            Command="{Binding SearchUsersCommand}"
+                                            IsEnabled="{Binding IsSearching, Converter={StaticResource InverseBoolConverter}}"/>
+                                </Grid>
+                                
+                                <!-- Search Results -->
+                                <Border Visibility="{Binding SearchResults.Count, Converter={StaticResource CountToVisibilityConverter}}"
+                                        BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" 
+                                        CornerRadius="4" Margin="0,8,0,0" MaxHeight="150">
+                                    <DockPanel>
+                                        <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="6,6,6,4">
+                                            <TextBlock Text="{Binding SearchResults.Count, StringFormat='Найдено: {0}'}" 
+                                                       Style="{StaticResource LabelStyle}"/>
+                                            <Button Content="➕ Добавить" Padding="8,4" Margin="12,0,0,0"
+                                                    Style="{StaticResource PrimaryButtonStyle}"
+                                                    Command="{Binding AddFromSearchCommand}"
+                                                    ToolTip="Добавить выбранного пользователя"/>
+                                            <Button Content="➕ Всех" Padding="8,4" Margin="6,0,0,0"
+                                                    Style="{StaticResource SecondaryButtonStyle}"
+                                                    Command="{Binding AddAllFromSearchCommand}"
+                                                    ToolTip="Добавить всех найденных"/>
+                                        </StackPanel>
+                                        <ListBox ItemsSource="{Binding SearchResults}"
+                                                 SelectedItem="{Binding SelectedSearchResult}"
+                                                 MaxHeight="100" Margin="4,0,4,4"
+                                                 Background="Transparent"
+                                                 BorderThickness="0">
+                                            <ListBox.ItemTemplate>
+                                                <DataTemplate>
+                                                    <StackPanel Orientation="Horizontal" Margin="2">
+                                                        <TextBlock Text="{Binding FullName}" FontWeight="SemiBold"/>
+                                                        <TextBlock Text="{Binding Description, StringFormat=' — {0}'}" 
+                                                                   Style="{StaticResource LabelStyle}" Margin="4,0,0,0"/>
+                                                    </StackPanel>
+                                                </DataTemplate>
+                                            </ListBox.ItemTemplate>
+                                        </ListBox>
+                                    </DockPanel>
+                                </Border>
+                            </StackPanel>
+                        </Border>
                     </StackPanel>
                     
                     <DataGrid ItemsSource="{Binding Users}" 

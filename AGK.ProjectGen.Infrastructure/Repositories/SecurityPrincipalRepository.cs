@@ -275,4 +275,136 @@ public class SecurityPrincipalRepository : ISecurityPrincipalRepository
         return systemUsers.Any(u => 
             string.Equals(u, name, StringComparison.OrdinalIgnoreCase));
     }
+    
+    /// <summary>
+    /// Умный поиск пользователей по части имени, логина или фамилии.
+    /// Поддерживает поиск по нескольким словам (например "Климов Алекс" найдёт "Климович Александр").
+    /// Регистронезависимый.
+    /// </summary>
+    public Task<List<SecurityPrincipal>> SearchUsersInAdAsync(string query)
+    {
+        return Task.Run(() =>
+        {
+            var result = new List<SecurityPrincipal>();
+            
+            if (string.IsNullOrWhiteSpace(query) || query.Length < 2)
+                return result;
+            
+            // Разбиваем запрос на части для умного поиска
+            var queryParts = query
+                .Split(new[] { ' ', ',', ';' }, StringSplitOptions.RemoveEmptyEntries)
+                .Where(p => p.Length >= 2)
+                .Select(p => p.ToLowerInvariant())
+                .ToArray();
+            
+            if (queryParts.Length == 0)
+                return result;
+            
+            // Собираем всех пользователей из доступных источников
+            var allUsers = new List<(UserPrincipal User, string Label)>();
+            
+            // Пробуем сначала домен (если доступен), потом локальную машину
+            var contextsToTry = new List<(ContextType Type, string Label)>();
+            
+            // Проверяем доступность домена
+            try
+            {
+                using var testContext = new PrincipalContext(ContextType.Domain);
+                contextsToTry.Add((ContextType.Domain, Environment.UserDomainName));
+            }
+            catch
+            {
+                // Домен недоступен — не добавляем
+            }
+            
+            // Всегда добавляем локальную машину (для Windows Server с локальными учётками)
+            contextsToTry.Add((ContextType.Machine, Environment.MachineName));
+            
+            foreach (var (contextType, label) in contextsToTry)
+            {
+                try
+                {
+                    using var context = new PrincipalContext(contextType);
+                    using var userPrincipal = new UserPrincipal(context);
+                    using var searcher = new PrincipalSearcher(userPrincipal);
+                    
+                    foreach (var principal in searcher.FindAll())
+                    {
+                        if (principal is UserPrincipal user)
+                        {
+                            if (IsSystemUser(user.Name)) continue;
+                            
+                            // Собираем все текстовые поля для поиска
+                            var searchableText = string.Join(" ",
+                                user.SamAccountName ?? "",
+                                user.DisplayName ?? "",
+                                user.Name ?? "",
+                                user.Description ?? "",
+                                user.GivenName ?? "",      // Имя
+                                user.Surname ?? ""         // Фамилия
+                            ).ToLowerInvariant();
+                            
+                            // Проверяем, что ВСЕ части запроса найдены в тексте
+                            bool allPartsMatch = queryParts.All(part => searchableText.Contains(part));
+                            
+                            if (allPartsMatch)
+                            {
+                                // Проверяем дубликаты
+                                var fullName = $"{label}\\{user.SamAccountName ?? user.Name}";
+                                if (result.Any(r => r.FullName.Equals(fullName, StringComparison.OrdinalIgnoreCase)))
+                                    continue;
+                                
+                                result.Add(new SecurityPrincipal
+                                {
+                                    Name = user.SamAccountName ?? user.Name ?? string.Empty,
+                                    Domain = label,
+                                    Description = BuildDescription(user),
+                                    Type = SecurityPrincipalType.User
+                                });
+                                
+                                // Ограничиваем результаты
+                                if (result.Count >= 50) break;
+                            }
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Search in {contextType} failed: {ex.Message}");
+                }
+                
+                if (result.Count >= 50) break;
+            }
+            
+            // Сортируем по релевантности: сначала точные совпадения с началом
+            return result
+                .OrderByDescending(r => queryParts.Any(p => 
+                    r.Name.StartsWith(p, StringComparison.OrdinalIgnoreCase) ||
+                    r.Description.StartsWith(p, StringComparison.OrdinalIgnoreCase)))
+                .ThenBy(r => r.Name)
+                .Take(50)
+                .ToList();
+        });
+    }
+    
+    /// <summary>
+    /// Формирует описание пользователя из доступных полей.
+    /// </summary>
+    private static string BuildDescription(UserPrincipal user)
+    {
+        // Приоритет: DisplayName > "Фамилия Имя" > Description
+        if (!string.IsNullOrWhiteSpace(user.DisplayName))
+            return user.DisplayName;
+        
+        var nameParts = new List<string>();
+        if (!string.IsNullOrWhiteSpace(user.Surname))
+            nameParts.Add(user.Surname);
+        if (!string.IsNullOrWhiteSpace(user.GivenName))
+            nameParts.Add(user.GivenName);
+        
+        if (nameParts.Count > 0)
+            return string.Join(" ", nameParts);
+        
+        return user.Description ?? string.Empty;
+    }
 }

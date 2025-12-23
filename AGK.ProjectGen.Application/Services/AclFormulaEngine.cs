@@ -10,6 +10,19 @@ public class AclFormulaEngine : IAclFormulaEngine
 {
     public List<AclRule> CalculateAclRules(GeneratedNode node, StructureNodeDefinition? nodeDef, ProfileSchema profile)
     {
+        // Если пользователь внёс изменения (HasAclChanges = true), 
+        // возвращаем NodeAclOverrides даже если он пустой (удаление всех прав)
+        if (node.HasAclChanges)
+        {
+            return node.NodeAclOverrides.ToList();
+        }
+        
+        // Если есть overrides без флага изменений — возвращаем их
+        if (node.NodeAclOverrides.Count > 0)
+        {
+            return node.NodeAclOverrides.ToList();
+        }
+        
         var rules = new List<AclRule>();
         
         // 1. Применяем правила из определения узла в структуре (если есть)
@@ -45,13 +58,6 @@ public class AclFormulaEngine : IAclFormulaEngine
                     rules.AddRange(template.Rules);
                 }
             }
-        }
-        
-        // 3. Per-node overrides имеют приоритет
-        if (node.NodeAclOverrides.Count > 0)
-        {
-            // Overrides полностью заменяют формульные правила
-            return node.NodeAclOverrides.ToList();
         }
         
         return rules;

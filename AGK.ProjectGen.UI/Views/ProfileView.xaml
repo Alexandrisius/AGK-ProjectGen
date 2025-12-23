@@ -232,11 +232,12 @@
                                     
                                     <DataGrid ItemsSource="{Binding SelectedProfile.ProjectAttributes}" 
                                               SelectedItem="{Binding SelectedAttribute}"
-                                              Style="{StaticResource ModernDataGridStyle}">
+                                              Style="{StaticResource ModernDataGridStyle}"
+                                              IsReadOnly="False">
                                         <DataGrid.Columns>
                                             <DataGridTextColumn Header="Ключ" Binding="{Binding Key}" Width="150" IsReadOnly="True"/>
                                             <DataGridTextColumn Header="Название" Binding="{Binding DisplayName}" Width="*"/>
-                                            <DataGridTextColumn Header="Тип" Binding="{Binding Type}" Width="140"/>
+                                            <DataGridTextColumn Header="Тип" Binding="{Binding Type}" Width="140" IsReadOnly="True"/>
                                             <DataGridCheckBoxColumn Header="Обяз." Binding="{Binding IsRequired}" Width="80"/>
                                         </DataGrid.Columns>
                                     </DataGrid>
@@ -251,8 +252,10 @@
                                         <TextBlock Text="Свойства атрибута" Style="{StaticResource H3Style}" Margin="0,0,0,16"/>
                                         
                                         <TextBlock Text="Ключ (ID)" Style="{StaticResource LabelStyle}" Margin="0,0,0,6"/>
-                                        <TextBox Text="{Binding SelectedAttribute.Key, UpdateSourceTrigger=PropertyChanged}" 
-                                                 Style="{StaticResource ModernTextBoxStyle}" Margin="0,0,0,12"/>
+                                        <TextBox Text="{Binding SelectedAttribute.Key}" 
+                                                 Style="{StaticResource ModernTextBoxStyle}" Margin="0,0,0,12"
+                                                 IsReadOnly="True"
+                                                 ToolTip="Ключ задаётся при создании и не может быть изменён"/>
                                         
                                         <TextBlock Text="Название" Style="{StaticResource LabelStyle}" Margin="0,0,0,6"/>
                                         <TextBox Text="{Binding SelectedAttribute.DisplayName, UpdateSourceTrigger=PropertyChanged}" 
